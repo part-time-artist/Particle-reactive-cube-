@@ -1,88 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Cube | Interactive Point Cloud</title>
-    <!-- Futuristic Font -->
+    <title>Cloud Cube</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #050505;
-            color: white;
-            font-family: 'JetBrains Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
-
-        #canvas-container {
-            width: 100vw;
-            height: 100vh;
-        }
-
+        #canvas-container { width: 100vw; height: 100vh; }
         #info {
             position: absolute;
-            top: 30px;
-            left: 30px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 25px;
-            border: 1px solid rgba(0, 153, 255, 0.3);
-            border-radius: 4px;
+            top: 40px;
+            left: 40px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08); /* Minimal border */
+            border-radius: 2px;
             pointer-events: none;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 20px rgba(0, 153, 255, 0.1);
+            backdrop-filter: blur(8px);
         }
-
         h2 {
-            margin: 0 0 15px 0;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.4rem;
-            color: #0099ff;
-            text-shadow: 0 0 10px rgba(0, 153, 255, 0.5);
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
         }
-
         .status-item {
-            display: flex;
-            align-items: center;
-            margin: 8px 0;
-            font-size: 0.75rem;
-            opacity: 0.9;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
-
-        .status-label {
-            color: #0099ff;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
         .instruction {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.5;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.4);
+            line-height: 2;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
+        
+        /* Context-Aware Controls Display */
+        .mobile-only { display: none; }
+        .desktop-only { display: none; }
 
-        /* Scanline Effect */
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-            z-index: 10;
+        @media (max-width: 767px) {
+            #info { top: 20px; left: 20px; right: 20px; padding: 20px; }
+            .mobile-only { display: block; }
+        }
+        @media (min-width: 768px) {
+            .desktop-only { display: block; }
         }
     </style>
     <script type="importmap">
@@ -94,28 +73,21 @@
         }
     </script>
 </head>
-
 <body>
     <div id="info">
         <h2>Cloud Cube</h2>
-        <div class="status-item">
-            <span class="status-label">SYS_STATUS:</span>
-            <span>ACTIVE_O1</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">GEOMETRY:</span>
-            <span>DATA_CORE_BOX</span>
-        </div>
-
+        <div class="status-item">v.2.0 // white_core</div>
         <div class="instruction">
-            [MOBILE]<br>
-            • 1 FINGER: DISTORT CORE<br>
-            • 2 FINGERS: ROTATE VIEW<br>
-            <br>
-            [DESKTOP]<br>
-            • CURSOR: DISTORT CORE<br>
-            • DRAG: ROTATE VIEW<br>
-            • SCROLL: ZOOM
+            <!-- These toggles ensure only relevant info shows per device -->
+            <div class="mobile-only">
+                • 1 finger: distort<br>
+                • 2 fingers: rotate
+            </div>
+            <div class="desktop-only">
+                • cursor: distort<br>
+                • drag: rotate<br>
+                • scroll: zoom
+            </div>
         </div>
     </div>
     <div id="canvas-container"></div>
@@ -124,28 +96,26 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // --- CONFIGURATION ---
         const isMobile = window.innerWidth < 768;
         const config = {
-            color: new THREE.Color(0x0099ff),
+            color: new THREE.Color(0xffffff),
             bgColor: new THREE.Color(0x050505),
-            pointCount: isMobile ? 8000 : 15000,
-            pointSize: isMobile ? 0.012 : 0.010, // MUCH smaller particles
+            pointCount: isMobile ? 6000 : 15000,
+            pointSize: isMobile ? 0.007 : 0.005,
             speed: 0.2,
-            boxSize: isMobile ? 2.5 : 4.0,
-            gravityRadius: isMobile ? 1.5 : 2.5,
-            gravityStrength: isMobile ? 0.28 : 0.2,
+            boxSize: isMobile ? 1.6 : 3.5,
+            gravityRadius: isMobile ? 1.0 : 2.5,
+            gravityStrength: isMobile ? 0.35 : 0.22,
             fogNear: isMobile ? 3.0 : 4.0,
             fogFar: isMobile ? 7.0 : 8.0
         };
 
-        // --- SETUP ---
         const scene = new THREE.Scene();
         scene.background = config.bgColor;
         scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = isMobile ? 5 : 6;
+        camera.position.z = isMobile ? 4 : 6;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -154,18 +124,12 @@
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
+        controls.dampingFactor = 0.03;
         controls.enableZoom = true;
+        controls.touches = { ONE: null, TWO: THREE.TOUCH.ROTATE };
 
-        // Fix for two-finger rotation
-        controls.touches = {
-            ONE: null,
-            TWO: THREE.TOUCH.ROTATE
-        };
-
-        // --- PARTICLES ---
         const particlesGeometry = new THREE.BufferGeometry();
         const count = config.pointCount;
-
         const positions = new Float32Array(count * 3);
         const originals = new Float32Array(count * 3);
         const lives = new Float32Array(count);
@@ -176,7 +140,6 @@
             const u = (Math.random() - 0.5) * config.boxSize;
             const v = (Math.random() - 0.5) * config.boxSize;
             const half = config.boxSize / 2;
-
             let x, y, z;
             switch (face) {
                 case 0: x = half; y = u; z = v; break;
@@ -186,15 +149,12 @@
                 case 4: x = u; y = v; z = half; break;
                 case 5: x = u; y = v; z = -half; break;
             }
-
             positions[i * 3] = x;
             positions[i * 3 + 1] = y;
             positions[i * 3 + 2] = z;
-
             originals[i * 3] = x;
             originals[i * 3 + 1] = y;
             originals[i * 3 + 2] = z;
-
             lives[i] = Math.random();
             lifeSpeeds[i] = 0.2 + Math.random() * 0.6;
         }
@@ -239,14 +199,12 @@
             `,
             transparent: true,
             depthWrite: false,
-            blending: THREE.AdditiveBlending // Glow effect
+            blending: THREE.NormalBlending
         });
 
         const pointCloud = new THREE.Points(particlesGeometry, shaderMaterial);
         scene.add(pointCloud);
 
-        // --- INTERACTION ---
-        const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2(999, 999);
         const prevPointer = new THREE.Vector2(999, 999);
         let motionIntensity = 0;
@@ -258,13 +216,11 @@
             }
         });
 
-        // Touch handling
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                // Allow scrolling if not over canvas if needed, but here we likely want interaction
             } else {
                 pointer.x = 999;
                 pointer.y = 999;
@@ -276,37 +232,31 @@
             pointer.y = 999;
         });
 
-        // --- ANIMATION LOOP ---
         const clock = new THREE.Clock();
-
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
-
             const distMoved = pointer.distanceTo(prevPointer);
             if (distMoved > 0.0005 && pointer.x < 500) {
                 motionIntensity = 1.0;
             } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.5);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 3.0);
             }
             prevPointer.copy(pointer);
 
-            const effectiveStrength = config.gravityStrength * (isMobile ? 1.2 : 1.0) * motionIntensity;
+            const effectiveStrength = config.gravityStrength * (isMobile ? 1.4 : 1.0) * motionIntensity;
+            pointCloud.rotation.x += delta * config.speed * 0.05;
+            pointCloud.rotation.y += delta * config.speed * 0.1;
 
-            pointCloud.rotation.x += delta * config.speed * 0.1;
-            pointCloud.rotation.y += delta * config.speed * 0.2;
-
-            const posAttr = particlesGeometry.attributes.position;
-            const lifeAttr = particlesGeometry.attributes.life;
-
+            const positionArray = particlesGeometry.attributes.position.array;
+            const lifeArray = particlesGeometry.attributes.life.array;
+            
+            // Interaction Math
+            const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(pointer, camera);
-            const rayDirWorld = raycaster.ray.direction.clone();
             const inverseMatrix = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
             const localRay = raycaster.ray.clone().applyMatrix4(inverseMatrix);
-            const localRayDir = rayDirWorld.transformDirection(inverseMatrix).normalize();
-
-            const positionArray = posAttr.array;
-            const lifeArray = lifeAttr.array;
+            const localRayDir = raycaster.ray.direction.clone().transformDirection(inverseMatrix).normalize();
 
             const vec = new THREE.Vector3();
             const closest = new THREE.Vector3();
@@ -315,7 +265,6 @@
 
             for (let i = 0; i < count; i++) {
                 const i3 = i * 3;
-
                 lifeArray[i] += delta * lifeSpeeds[i];
                 if (lifeArray[i] > 1.0) {
                     lifeArray[i] = 0.0;
@@ -323,46 +272,29 @@
                     positionArray[i3 + 1] = originals[i3 + 1];
                     positionArray[i3 + 2] = originals[i3 + 2];
                 }
-
                 vec.set(positionArray[i3], positionArray[i3 + 1], positionArray[i3 + 2]);
-                const ox = originals[i3];
-                const oy = originals[i3 + 1];
-                const oz = originals[i3 + 2];
-
-                const distSq = localRay.distanceSqToPoint(vec);
-                const dist = Math.sqrt(distSq);
-
+                const ox = originals[i3], oy = originals[i3 + 1], oz = originals[i3 + 2];
+                const dist = localRay.distanceToPoint(vec);
                 if (dist < config.gravityRadius && effectiveStrength > 0.01) {
                     localRay.closestPointToPoint(vec, closest);
                     radial.copy(closest).sub(vec).normalize();
                     orbit.crossVectors(localRayDir, radial).normalize();
-
-                    let strength = (1.0 - dist / config.gravityRadius);
-                    strength = strength * strength;
-
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 12.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 8.0));
+                    let strength = Math.pow(1.0 - dist / config.gravityRadius, 2);
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 16.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 10.0));
                 }
-
-                const returnSpeed = (pointer.x > 500) ? 3.0 : 0.8;
+                const returnSpeed = (pointer.x > 500) ? 4.0 : 1.4;
                 vec.x += (ox - vec.x) * delta * returnSpeed;
                 vec.y += (oy - vec.y) * delta * returnSpeed;
                 vec.z += (oz - vec.z) * delta * returnSpeed;
-
-                positionArray[i3] = vec.x;
-                positionArray[i3 + 1] = vec.y;
-                positionArray[i3 + 2] = vec.z;
+                positionArray[i3] = vec.x; positionArray[i3 + 1] = vec.y; positionArray[i3 + 2] = vec.z;
             }
-
-            posAttr.needsUpdate = true;
-            lifeAttr.needsUpdate = true;
-
+            particlesGeometry.attributes.position.needsUpdate = true;
+            particlesGeometry.attributes.life.needsUpdate = true;
             controls.update();
             renderer.render(scene, camera);
         }
-
         animate();
-
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -370,13 +302,4 @@
         });
     </script>
 </body>
-
-</html>
-
-</body>
-
-</html>
-
-</body>
-
 </html>
