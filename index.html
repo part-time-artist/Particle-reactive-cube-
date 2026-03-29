@@ -65,17 +65,18 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // --- CONFIGURATION ---
+        const isMobile = window.innerWidth < 768;
         const config = {
             color: new THREE.Color(0x0099ff),
             bgColor: new THREE.Color(0x050505),
-            pointCount: 12000,
-            pointSize: 0.025,
+            pointCount: isMobile ? 8000 : 12000, // Slightly fewer particles for mobile performance
+            pointSize: isMobile ? 0.035 : 0.025, // Slightly larger particles for visibility
             speed: 0.2,
-            boxSize: 4.0,
-            gravityRadius: 2.5,
-            gravityStrength: 0.2,
-            fogNear: 4.0,
-            fogFar: 8.0
+            boxSize: isMobile ? 2.5 : 4.0,       // Smaller cube for mobile
+            gravityRadius: isMobile ? 1.5 : 2.5, // Smaller attraction area
+            gravityStrength: isMobile ? 0.25 : 0.2,
+            fogNear: isMobile ? 3.0 : 4.0,
+            fogFar: isMobile ? 7.0 : 8.0
         };
 
         // --- SETUP ---
@@ -84,17 +85,25 @@
         scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 6;
+        camera.position.z = isMobile ? 5 : 6;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enableZoom = true;
         controls.autoRotate = false;
+
+        // --- MOBILE TOUCH OVERRIDE ---
+        // Single finger = Attract Particles
+        // Two fingers = Rotate Cube
+        controls.touches = {
+            ONE: null, // Disable rotation with one finger
+            TWO: THREE.TOUCH.ROTATE
+        };
 
         // --- PARTICLES ---
         const particlesGeometry = new THREE.BufferGeometry();
@@ -106,7 +115,6 @@
         const lifeSpeeds = new Float32Array(count);
 
         for (let i = 0; i < count; i++) {
-            // SURFACE DISTRIBUTION
             const face = Math.floor(Math.random() * 6);
             const u = (Math.random() - 0.5) * config.boxSize;
             const v = (Math.random() - 0.5) * config.boxSize;
@@ -120,7 +128,6 @@
                 case 3: x = u; y = -half; z = v; break;
                 case 4: x = u; y = v; z = half; break;
                 case 5: x = u; y = v; z = -half; break;
-                default: x = 0; y = 0; z = 0;
             }
 
             positions[i * 3] = x;
@@ -138,7 +145,6 @@
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         particlesGeometry.setAttribute('life', new THREE.BufferAttribute(lives, 1));
 
-        // Custom Shader Material
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 uColor: { value: config.color },
@@ -151,34 +157,26 @@
                 attribute float life;
                 varying float vAlpha;
                 uniform float uSize;
-                
                 varying float vFogDepth;
-
                 void main() {
                     vAlpha = sin(life * 3.14159);
-                    
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                     gl_PointSize = uSize * vAlpha * (10.0 / -mvPosition.z);
                     gl_Position = projectionMatrix * mvPosition;
-                    
                     vFogDepth = -mvPosition.z;
                 }
             `,
             fragmentShader: `
                 uniform vec3 uColor;
                 varying float vAlpha;
-                
                 uniform vec3 fogColor;
                 uniform float fogNear;
                 uniform float fogFar;
                 varying float vFogDepth;
-
                 void main() {
                     if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
-                    
                     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
                     float visibility = 1.0 - fogFactor;
-                    
                     gl_FragColor = vec4(uColor, vAlpha * visibility);
                 }
             `,
@@ -196,9 +194,38 @@
         const prevPointer = new THREE.Vector2(999, 999);
         let motionIntensity = 0;
 
+        // Desktop handling
         window.addEventListener('pointermove', (event) => {
-            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
+                pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            }
+        });
+
+        // Touch handling (Single finger = Particles, Multiple = Orbit)
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            } else {
+                // If more than 1 finger, we're likely rotating/zooming
+                pointer.x = 999;
+                pointer.y = 999;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            pointer.x = 999;
+            pointer.y = 999;
         });
 
         // --- ANIMATION LOOP ---
@@ -208,12 +235,11 @@
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // Motion Detection
             const distMoved = pointer.distanceTo(prevPointer);
-            if (distMoved > 0.001) {
+            if (distMoved > 0.001 && pointer.x < 500) {
                 motionIntensity = 1.0;
             } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.5);
             }
             prevPointer.copy(pointer);
 
@@ -227,7 +253,6 @@
 
             raycaster.setFromCamera(pointer, camera);
             const rayDirWorld = raycaster.ray.direction.clone();
-
             const inverseMatrix = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
             const localRay = raycaster.ray.clone().applyMatrix4(inverseMatrix);
             const localRayDir = rayDirWorld.transformDirection(inverseMatrix).normalize();
@@ -252,7 +277,6 @@
                     positionArray[i3 + 2] = originals[i3 + 2];
                 }
 
-                // Physics
                 vec.set(positionArray[i3], positionArray[i3 + 1], positionArray[i3 + 2]);
                 const ox = originals[i3];
                 const oy = originals[i3 + 1];
@@ -263,21 +287,21 @@
 
                 if (dist < config.gravityRadius && effectiveStrength > 0.01) {
                     localRay.closestPointToPoint(vec, closest);
-
                     radial.copy(closest).sub(vec).normalize();
                     orbit.crossVectors(localRayDir, radial).normalize();
 
                     let strength = (1.0 - dist / config.gravityRadius);
                     strength = strength * strength;
 
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 8.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 4.0));
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 10.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 6.0));
                 }
 
-                // Return
-                vec.x += (ox - vec.x) * delta * 0.8;
-                vec.y += (oy - vec.y) * delta * 0.8;
-                vec.z += (oz - vec.z) * delta * 0.8;
+                // Smooth Return to origin
+                const returnSpeed = (pointer.x > 500) ? 2.5 : 0.8;
+                vec.x += (ox - vec.x) * delta * returnSpeed;
+                vec.y += (oy - vec.y) * delta * returnSpeed;
+                vec.z += (oz - vec.z) * delta * returnSpeed;
 
                 positionArray[i3] = vec.x;
                 positionArray[i3 + 1] = vec.y;
@@ -294,12 +318,17 @@
         animate();
 
         window.addEventListener('resize', () => {
+            const isNowMobile = window.innerWidth < 768;
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             shaderMaterial.uniforms.uSize.value = config.pointSize * 50 * window.devicePixelRatio;
         });
     </script>
+</body>
+
+</html>
+
 </body>
 
 </html>
