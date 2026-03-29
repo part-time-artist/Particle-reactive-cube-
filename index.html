@@ -23,7 +23,7 @@
             left: 40px;
             background: rgba(0, 0, 0, 0.15);
             padding: 24px;
-            border: 1px solid rgba(0, 153, 255, 0.1); /* Subtle blue tint */
+            border: 1px solid rgba(255, 255, 255, 0.08); 
             border-radius: 2px;
             pointer-events: none;
             backdrop-filter: blur(8px);
@@ -37,7 +37,7 @@
         }
         .status-item {
             font-size: 0.6rem;
-            color: rgba(0, 153, 255, 0.5); /* Blue status */
+            color: rgba(255, 255, 255, 0.3); 
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -75,11 +75,11 @@
 <body>
     <div id="info">
         <h2>Cloud Cube</h2>
-        <div class="status-item">CORE_ACTIVE // BLUE_MODE</div>
+        <div class="status-item">CORE_ACTIVE // WARM_WHITE_v.2.1</div>
         <div class="instruction">
             <div class="mobile-only">
                 • 1 finger: interact<br>
-                • 2 fingers: rotate
+                • auto-rotation enabled
             </div>
             <div class="desktop-only">
                 • cursor: interact<br>
@@ -96,14 +96,14 @@
 
         const isMobile = window.innerWidth < 768;
         const config = {
-            color: new THREE.Color(0x0099ff), // BLUE IS BACK
+            color: new THREE.Color(0xfff8e1), // WARM WHITE
             bgColor: new THREE.Color(0x050505),
             pointCount: isMobile ? 8000 : 15000,
-            pointSize: isMobile ? 0.015 : 0.012, // Slightly larger particles
-            speed: 0.2,
-            boxSize: isMobile ? 2.0 : 4.0,       
+            pointSize: isMobile ? 0.012 : 0.008, 
+            speed: isMobile ? 0.4 : 0.2, // Rotation speed constant
+            boxSize: isMobile ? 1.8 : 3.8,       
             gravityRadius: isMobile ? 1.5 : 2.5,
-            gravityStrength: isMobile ? 0.35 : 0.22,
+            gravityStrength: isMobile ? 0.22 : 0.18, // Reduced scrunch speed
             fogNear: isMobile ? 3.0 : 4.0,
             fogFar: isMobile ? 7.0 : 8.0
         };
@@ -113,7 +113,7 @@
         scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = isMobile ? 5 : 6;
+        camera.position.z = isMobile ? 4.5 : 6;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -123,8 +123,17 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.enableRotate = true; // Ensure rotation is enabled
-        controls.touches = { ONE: null, TWO: THREE.TOUCH.ROTATE };
+        
+        // --- MOBILE OVERRIDE ---
+        if (isMobile) {
+            controls.enableRotate = false; // Disable manual rotate
+            controls.autoRotate = true;   // Auto rotate only
+            controls.autoRotateSpeed = 4.0;
+        } else {
+            controls.enableRotate = true;
+            controls.autoRotate = false; // Manual on laptop
+        }
+        controls.enableZoom = true;
 
         const particlesGeometry = new THREE.BufferGeometry();
         const count = config.pointCount;
@@ -214,32 +223,29 @@
                 const touch = e.touches[0];
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-            } else {
-                pointer.x = 999;
-                pointer.y = 999;
             }
         }, { passive: true });
 
-        window.addEventListener('touchend', () => {
-            pointer.x = 999;
-            pointer.y = 999;
-        });
+        window.addEventListener('touchend', () => { pointer.x = 999; pointer.y = 999; });
 
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
             const distMoved = pointer.distanceTo(prevPointer);
+            
             if (distMoved > 0.0005 && pointer.x < 500) {
                 motionIntensity = 1.0;
             } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 3.0);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.5);
             }
             prevPointer.copy(pointer);
 
             const effectiveStrength = config.gravityStrength * (isMobile ? 1.4 : 1.0) * motionIntensity;
-            pointCloud.rotation.x += delta * config.speed * 0.05;
-            pointCloud.rotation.y += delta * config.speed * 0.1;
+            
+            // Base inherent rotation
+            pointCloud.rotation.x += delta * (isMobile ? 0.2 : 0.05);
+            pointCloud.rotation.y += delta * (isMobile ? 0.3 : 0.1);
 
             const positionArray = particlesGeometry.attributes.position.array;
             const lifeArray = particlesGeometry.attributes.life.array;
@@ -272,10 +278,10 @@
                     radial.copy(closest).sub(vec).normalize();
                     orbit.crossVectors(localRayDir, radial).normalize();
                     let strength = Math.pow(1.0 - dist / config.gravityRadius, 2);
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 16.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 10.0));
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 14.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 8.0));
                 }
-                const returnSpeed = (pointer.x > 500) ? 4.0 : 1.4;
+                const returnSpeed = (pointer.x > 500) ? 3.0 : 1.2;
                 vec.x += (ox - vec.x) * delta * returnSpeed;
                 vec.y += (oy - vec.y) * delta * returnSpeed;
                 vec.z += (oz - vec.z) * delta * returnSpeed;
