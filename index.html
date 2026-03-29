@@ -21,43 +21,55 @@
             position: absolute;
             top: 40px;
             left: 40px;
-            background: rgba(0, 0, 0, 0.15);
+            background: rgba(0, 0, 0, 0.12);
             padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
             border-radius: 2px;
             pointer-events: none;
             backdrop-filter: blur(8px);
         }
         h2 {
-            margin: 0 0 8px 0;
-            font-size: 0.9rem;
+            margin: 0;
+            font-size: 0.85rem;
             font-weight: 500;
-            letter-spacing: 2.5px;
+            letter-spacing: 3px;
             text-transform: uppercase;
         }
         .status-item {
-            font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.3); 
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.2); 
             letter-spacing: 1px;
             text-transform: uppercase;
+            margin-top: 8px;
         }
         .instruction {
             margin-top: 24px;
             padding-top: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.3);
             line-height: 2;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
         
-        .mobile-only { display: none; }
-        .desktop-only { display: none; }
+        #watermark {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
+            pointer-events: none;
+        }
 
+        /* Responsive Logic */
+        .desktop-only { display: none; }
         @media (max-width: 767px) {
-            #info { top: 20px; left: 20px; right: 20px; padding: 20px; }
-            .mobile-only { display: block; }
+            #info { top: 25px; left: 25px; padding: 16px; border: none; background: transparent; backdrop-filter: none; }
+            #watermark { bottom: 25px; left: 25px; font-size: 0.5rem; letter-spacing: 1.5px; }
         }
         @media (min-width: 768px) {
             .desktop-only { display: block; }
@@ -75,19 +87,18 @@
 <body>
     <div id="info">
         <h2>Cloud Cube</h2>
-        <div class="status-item">CORE_ACTIVE // WARM_WHITE_v.2.1</div>
-        <div class="instruction">
-            <div class="mobile-only">
-                • 1 finger: interact<br>
-                • auto-rotation enabled
-            </div>
-            <div class="desktop-only">
+        <div class="desktop-only">
+            <div class="status-item">v.2.2 // core_flux</div>
+            <div class="instruction">
                 • cursor: interact<br>
                 • drag: rotate<br>
                 • scroll: zoom
             </div>
         </div>
     </div>
+
+    <div id="watermark">by parttimeartist</div>
+
     <div id="canvas-container"></div>
 
     <script type="module">
@@ -96,14 +107,14 @@
 
         const isMobile = window.innerWidth < 768;
         const config = {
-            color: new THREE.Color(0xfff8e1), // WARM WHITE
+            color: new THREE.Color(0xfff8e1), 
             bgColor: new THREE.Color(0x050505),
             pointCount: isMobile ? 8000 : 15000,
             pointSize: isMobile ? 0.012 : 0.008, 
-            speed: isMobile ? 0.4 : 0.2, // Rotation speed constant
-            boxSize: isMobile ? 1.8 : 3.8,       
-            gravityRadius: isMobile ? 1.5 : 2.5,
-            gravityStrength: isMobile ? 0.22 : 0.18, // Reduced scrunch speed
+            speed: isMobile ? 0.4 : 0.2,
+            boxSize: isMobile ? 1.6 : 3.8,       
+            gravityRadius: isMobile ? 1.2 : 2.5,
+            gravityStrength: isMobile ? 0.14 : 0.12, // EVEN LOWER Magnetism
             fogNear: isMobile ? 3.0 : 4.0,
             fogFar: isMobile ? 7.0 : 8.0
         };
@@ -124,14 +135,13 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         
-        // --- MOBILE OVERRIDE ---
         if (isMobile) {
-            controls.enableRotate = false; // Disable manual rotate
-            controls.autoRotate = true;   // Auto rotate only
+            controls.enableRotate = false; 
+            controls.autoRotate = true;   
             controls.autoRotateSpeed = 4.0;
         } else {
             controls.enableRotate = true;
-            controls.autoRotate = false; // Manual on laptop
+            controls.autoRotate = false;
         }
         controls.enableZoom = true;
 
@@ -223,6 +233,9 @@
                 const touch = e.touches[0];
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            } else {
+                pointer.x = 999;
+                pointer.y = 999;
             }
         }, { passive: true });
 
@@ -235,15 +248,14 @@
             const distMoved = pointer.distanceTo(prevPointer);
             
             if (distMoved > 0.0005 && pointer.x < 500) {
-                motionIntensity = 1.0;
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 5);
             } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.5);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
             }
             prevPointer.copy(pointer);
 
-            const effectiveStrength = config.gravityStrength * (isMobile ? 1.4 : 1.0) * motionIntensity;
+            const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
             
-            // Base inherent rotation
             pointCloud.rotation.x += delta * (isMobile ? 0.2 : 0.05);
             pointCloud.rotation.y += delta * (isMobile ? 0.3 : 0.1);
 
@@ -266,20 +278,18 @@
                 lifeArray[i] += delta * lifeSpeeds[i];
                 if (lifeArray[i] > 1.0) {
                     lifeArray[i] = 0.0;
-                    positionArray[i3] = originals[i3];
-                    positionArray[i3 + 1] = originals[i3 + 1];
-                    positionArray[i3 + 2] = originals[i3 + 2];
+                    positionArray[i3] = originals[i3]; positionArray[i3+1] = originals[i3+1]; positionArray[i3+2] = originals[i3+2];
                 }
-                vec.set(positionArray[i3], positionArray[i3 + 1], positionArray[i3 + 2]);
-                const ox = originals[i3], oy = originals[i3 + 1], oz = originals[i3 + 2];
+                vec.set(positionArray[i3], positionArray[i3+1], positionArray[i3+2]);
+                const ox = originals[i3], oy = originals[i3+1], oz = originals[i3+2];
                 const dist = localRay.distanceToPoint(vec);
                 if (dist < config.gravityRadius && effectiveStrength > 0.01) {
                     localRay.closestPointToPoint(vec, closest);
                     radial.copy(closest).sub(vec).normalize();
                     orbit.crossVectors(localRayDir, radial).normalize();
                     let strength = Math.pow(1.0 - dist / config.gravityRadius, 2);
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 14.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 8.0));
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 12.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 7.0));
                 }
                 const returnSpeed = (pointer.x > 500) ? 3.0 : 1.2;
                 vec.x += (ox - vec.x) * delta * returnSpeed;
