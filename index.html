@@ -1,133 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serenity | Find Your Peace</title>
-    <meta name="description" content="A premium mental health app to help you find balance, track your mood, and discover serenity.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>Interactive Point Cloud</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+    <!-- Import Three.js from CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
+
 <body>
-
-    <nav class="navbar">
-        <div class="logo">Serenity.</div>
-        <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#testimonials">Stories</a>
-            <a href="#faq">FAQ</a>
-            <button class="btn-primary">Get Started</button>
-        </div>
-        <button id="mobile-menu-btn" aria-label="Toggle menu">
-            <span></span>
-            <span></span>
-        </button>
-        
-    </nav>
-
-    <header class="hero">
-        <div class="hero-content">
-            <h1 class="editable" data-key="hero-title">Find Your Inner Calm</h1>
-            <p class="editable" data-key="hero-desc">Your daily companion for mental wellness, meditation, and mood tracking. Join millions finding balance today.</p>
-            <div class="hero-buttons">
-                <button class="btn-primary">Download App</button>
-                <button class="btn-secondary">Learn More</button>
-            </div>
-        </div>
-        <div class="hero-visual">
-            <div class="circle-bg"></div>
-            <!-- Abstract calm visual representation -->
-            <div class="glass-card float-card p1">
-                <span class="emoji">🌿</span>
-                <span class="text">Daily Zen</span>
-            </div>
-            <div class="glass-card float-card p2">
-                <span class="emoji">🌙</span>
-                <span class="text">Sleep Better</span>
-            </div>
-        </div>
-    </header>
-
-    <section id="features" class="features">
-        <div class="section-header">
-            <h2 class="editable" data-key="features-title">Why Serenity?</h2>
-            <p class="editable" data-key="features-subtitle">Tools designed to help you thrive in a chaotic world.</p>
-        </div>
-        
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="icon">🧘‍♀️</div>
-                <h3 class="editable" data-key="feat-1-title">Guided Meditation</h3>
-                <p class="editable" data-key="feat-1-desc">Hundreds of sessions for every mood, from stress relief to deep sleep.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon">📊</div>
-                <h3 class="editable" data-key="feat-2-title">Mood Tracking</h3>
-                <p class="editable" data-key="feat-2-desc">Understand your emotional patterns with beautiful daily insights.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon">🤝</div>
-                <h3 class="editable" data-key="feat-3-title">Therapy Connect</h3>
-                <p class="editable" data-key="feat-3-desc">Match with licensed professionals who specialized in your needs.</p>
-            </div>
-        </div>
-    </section>
-
-    <section id="testimonials" class="testimonials">
-        <div class="section-header">
-            <h2 class="editable" data-key="test-title">Stories of Change</h2>
-        </div>
-        <div class="testimonial-scroller">
-            <div class="testimonial-card">
-                <p class="quote editable" data-key="test-1-quote">"Serenity changed how I start my mornings. I feel more centered and ready to face the day."</p>
-                <div class="author">
-                    <div class="avatar">S</div>
-                    <span class="name editable" data-key="test-1-name">Sarah Jenkins</span>
-                </div>
-            </div>
-            <div class="testimonial-card">
-                <p class="quote editable" data-key="test-2-quote">"The mood tracking feature helped me identify triggers I never noticed before. Truly life changing."</p>
-                <div class="author">
-                    <div class="avatar">M</div>
-                    <span class="name editable" data-key="test-2-name">Marcus Chen</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="cta-section">
-        <div class="cta-content">
-            <h2 class="editable" data-key="cta-title">Start Your Journey Today</h2>
-            <p class="editable" data-key="cta-desc">Free for 7 days. No credit card required.</p>
-            <button class="btn-primary inverted">Get Serenity Now</button>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="footer-links">
-            <div class="col">
-                <h4>Serenity.</h4>
-                <p>© 2026 Serenity Inc.</p>
-            </div>
-            <div class="col">
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Support</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Floating Edit Toggle -->
-    <div class="edit-toggle-container">
-        <label class="switch">
-            <input type="checkbox" id="edit-mode-toggle">
-            <span class="slider round"></span>
-        </label>
-        <span class="label-text">Edit Mode</span>
+    <div id="info">
+        <h2>Deep Space Cloud</h2>
+        <p>📦 <b>Shape:</b> Hollow Cube</p>
+        <p>🏃 <b>Move Cursor:</b> To attract.</p>
     </div>
+    <div id="canvas-container"></div>
 
-    <script src="script.js"></script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- CONFIGURATION ---
+        const config = {
+            color: new THREE.Color(0x0099ff),
+            bgColor: new THREE.Color(0x050505),
+            pointCount: 12000,
+            pointSize: 0.025,
+            speed: 0.2,
+            boxSize: 4.0,
+            gravityRadius: 2.5,
+            gravityStrength: 0.2,
+            fogNear: 4.0,
+            fogFar: 8.0
+        };
+
+        // --- SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = config.bgColor;
+        scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 6;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enableZoom = true;
+        controls.autoRotate = false;
+
+        // --- PARTICLES ---
+        const particlesGeometry = new THREE.BufferGeometry();
+        const count = config.pointCount;
+
+        const positions = new Float32Array(count * 3);
+        const originals = new Float32Array(count * 3);
+        const lives = new Float32Array(count);
+        const lifeSpeeds = new Float32Array(count);
+
+        for (let i = 0; i < count; i++) {
+            // SURFACE DISTRIBUTION
+            const face = Math.floor(Math.random() * 6);
+            const u = (Math.random() - 0.5) * config.boxSize;
+            const v = (Math.random() - 0.5) * config.boxSize;
+            const half = config.boxSize / 2;
+
+            let x, y, z;
+            switch (face) {
+                case 0: x = half; y = u; z = v; break;
+                case 1: x = -half; y = u; z = v; break;
+                case 2: x = u; y = half; z = v; break;
+                case 3: x = u; y = -half; z = v; break;
+                case 4: x = u; y = v; z = half; break;
+                case 5: x = u; y = v; z = -half; break;
+                default: x = 0; y = 0; z = 0;
+            }
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+
+            originals[i * 3] = x;
+            originals[i * 3 + 1] = y;
+            originals[i * 3 + 2] = z;
+
+            lives[i] = Math.random();
+            lifeSpeeds[i] = 0.2 + Math.random() * 0.6;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('life', new THREE.BufferAttribute(lives, 1));
+
+        // Custom Shader Material
+        const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uColor: { value: config.color },
+                uSize: { value: config.pointSize * 50 * window.devicePixelRatio },
+                fogColor: { value: config.bgColor },
+                fogNear: { value: config.fogNear },
+                fogFar: { value: config.fogFar }
+            },
+            vertexShader: `
+                attribute float life;
+                varying float vAlpha;
+                uniform float uSize;
+                
+                varying float vFogDepth;
+
+                void main() {
+                    vAlpha = sin(life * 3.14159);
+                    
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = uSize * vAlpha * (10.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                    
+                    vFogDepth = -mvPosition.z;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying float vAlpha;
+                
+                uniform vec3 fogColor;
+                uniform float fogNear;
+                uniform float fogFar;
+                varying float vFogDepth;
+
+                void main() {
+                    if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
+                    
+                    float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+                    float visibility = 1.0 - fogFactor;
+                    
+                    gl_FragColor = vec4(uColor, vAlpha * visibility);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.NormalBlending
+        });
+
+        const pointCloud = new THREE.Points(particlesGeometry, shaderMaterial);
+        scene.add(pointCloud);
+
+        // --- INTERACTION ---
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2(999, 999);
+        const prevPointer = new THREE.Vector2(999, 999);
+        let motionIntensity = 0;
+
+        window.addEventListener('pointermove', (event) => {
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Motion Detection
+            const distMoved = pointer.distanceTo(prevPointer);
+            if (distMoved > 0.001) {
+                motionIntensity = 1.0;
+            } else {
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
+            }
+            prevPointer.copy(pointer);
+
+            const effectiveStrength = config.gravityStrength * motionIntensity;
+
+            pointCloud.rotation.x += delta * config.speed * 0.1;
+            pointCloud.rotation.y += delta * config.speed * 0.2;
+
+            const posAttr = particlesGeometry.attributes.position;
+            const lifeAttr = particlesGeometry.attributes.life;
+
+            raycaster.setFromCamera(pointer, camera);
+            const rayDirWorld = raycaster.ray.direction.clone();
+
+            const inverseMatrix = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
+            const localRay = raycaster.ray.clone().applyMatrix4(inverseMatrix);
+            const localRayDir = rayDirWorld.transformDirection(inverseMatrix).normalize();
+
+            const positionArray = posAttr.array;
+            const lifeArray = lifeAttr.array;
+
+            const vec = new THREE.Vector3();
+            const closest = new THREE.Vector3();
+            const orbit = new THREE.Vector3();
+            const radial = new THREE.Vector3();
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+
+                // Lifecycle
+                lifeArray[i] += delta * lifeSpeeds[i];
+                if (lifeArray[i] > 1.0) {
+                    lifeArray[i] = 0.0;
+                    positionArray[i3] = originals[i3];
+                    positionArray[i3 + 1] = originals[i3 + 1];
+                    positionArray[i3 + 2] = originals[i3 + 2];
+                }
+
+                // Physics
+                vec.set(positionArray[i3], positionArray[i3 + 1], positionArray[i3 + 2]);
+                const ox = originals[i3];
+                const oy = originals[i3 + 1];
+                const oz = originals[i3 + 2];
+
+                const distSq = localRay.distanceSqToPoint(vec);
+                const dist = Math.sqrt(distSq);
+
+                if (dist < config.gravityRadius && effectiveStrength > 0.01) {
+                    localRay.closestPointToPoint(vec, closest);
+
+                    radial.copy(closest).sub(vec).normalize();
+                    orbit.crossVectors(localRayDir, radial).normalize();
+
+                    let strength = (1.0 - dist / config.gravityRadius);
+                    strength = strength * strength;
+
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 8.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 4.0));
+                }
+
+                // Return
+                vec.x += (ox - vec.x) * delta * 0.8;
+                vec.y += (oy - vec.y) * delta * 0.8;
+                vec.z += (oz - vec.z) * delta * 0.8;
+
+                positionArray[i3] = vec.x;
+                positionArray[i3 + 1] = vec.y;
+                positionArray[i3 + 2] = vec.z;
+            }
+
+            posAttr.needsUpdate = true;
+            lifeAttr.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            shaderMaterial.uniforms.uSize.value = config.pointSize * 50 * window.devicePixelRatio;
+        });
+    </script>
 </body>
+
 </html>
