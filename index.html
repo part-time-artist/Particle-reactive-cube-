@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serenity | Find Your Peace</title>
+    <meta name="description" content="A premium mental health app to help you find balance, track your mood, and discover serenity.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">Serenity.</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#testimonials">Stories</a>
+            <a href="#faq">FAQ</a>
+            <button class="btn-primary">Get Started</button>
+        </div>
+        <button id="mobile-menu-btn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+        </button>
+        
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="editable" data-key="hero-title">Find Your Inner Calm</h1>
+            <p class="editable" data-key="hero-desc">Your daily companion for mental wellness, meditation, and mood tracking. Join millions finding balance today.</p>
+            <div class="hero-buttons">
+                <button class="btn-primary">Download App</button>
+                <button class="btn-secondary">Learn More</button>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="circle-bg"></div>
+            <!-- Abstract calm visual representation -->
+            <div class="glass-card float-card p1">
+                <span class="emoji">🌿</span>
+                <span class="text">Daily Zen</span>
+            </div>
+            <div class="glass-card float-card p2">
+                <span class="emoji">🌙</span>
+                <span class="text">Sleep Better</span>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2 class="editable" data-key="features-title">Why Serenity?</h2>
+            <p class="editable" data-key="features-subtitle">Tools designed to help you thrive in a chaotic world.</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon">🧘‍♀️</div>
+                <h3 class="editable" data-key="feat-1-title">Guided Meditation</h3>
+                <p class="editable" data-key="feat-1-desc">Hundreds of sessions for every mood, from stress relief to deep sleep.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3 class="editable" data-key="feat-2-title">Mood Tracking</h3>
+                <p class="editable" data-key="feat-2-desc">Understand your emotional patterns with beautiful daily insights.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🤝</div>
+                <h3 class="editable" data-key="feat-3-title">Therapy Connect</h3>
+                <p class="editable" data-key="feat-3-desc">Match with licensed professionals who specialized in your needs.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="testimonials">
+        <div class="section-header">
+            <h2 class="editable" data-key="test-title">Stories of Change</h2>
+        </div>
+        <div class="testimonial-scroller">
+            <div class="testimonial-card">
+                <p class="quote editable" data-key="test-1-quote">"Serenity changed how I start my mornings. I feel more centered and ready to face the day."</p>
+                <div class="author">
+                    <div class="avatar">S</div>
+                    <span class="name editable" data-key="test-1-name">Sarah Jenkins</span>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="quote editable" data-key="test-2-quote">"The mood tracking feature helped me identify triggers I never noticed before. Truly life changing."</p>
+                <div class="author">
+                    <div class="avatar">M</div>
+                    <span class="name editable" data-key="test-2-name">Marcus Chen</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2 class="editable" data-key="cta-title">Start Your Journey Today</h2>
+            <p class="editable" data-key="cta-desc">Free for 7 days. No credit card required.</p>
+            <button class="btn-primary inverted">Get Serenity Now</button>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <div class="col">
+                <h4>Serenity.</h4>
+                <p>© 2026 Serenity Inc.</p>
+            </div>
+            <div class="col">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Edit Toggle -->
+    <div class="edit-toggle-container">
+        <label class="switch">
+            <input type="checkbox" id="edit-mode-toggle">
+            <span class="slider round"></span>
+        </label>
+        <span class="label-text">Edit Mode</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

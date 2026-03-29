@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Point Cloud</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+    <!-- Import Three.js from CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="info">
+        <h2>Deep Space Cloud</h2>
+        <p>📦 <b>Shape:</b> Hollow Cube</p>
+        <p>🏃 <b>Move Cursor:</b> To attract.</p>
+    </div>
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- CONFIGURATION ---
+        const config = {
+            color: new THREE.Color(0x0099ff),
+            bgColor: new THREE.Color(0x050505),
+            pointCount: 12000,
+            pointSize: 0.025,
+            speed: 0.2,
+            boxSize: 4.0,
+            gravityRadius: 2.5,
+            gravityStrength: 0.2,
+            fogNear: 4.0,
+            fogFar: 8.0
+        };
+
+        // --- SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = config.bgColor;
+        scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 6;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enableZoom = true;
+        controls.autoRotate = false;
+
+        // --- PARTICLES ---
+        const particlesGeometry = new THREE.BufferGeometry();
+        const count = config.pointCount;
+
+        const positions = new Float32Array(count * 3);
+        const originals = new Float32Array(count * 3);
+        const lives = new Float32Array(count);
+        const lifeSpeeds = new Float32Array(count);
+
+        for (let i = 0; i < count; i++) {
+            // SURFACE DISTRIBUTION
+            const face = Math.floor(Math.random() * 6);
+            const u = (Math.random() - 0.5) * config.boxSize;
+            const v = (Math.random() - 0.5) * config.boxSize;
+            const half = config.boxSize / 2;
+
+            let x, y, z;
+            switch (face) {
+                case 0: x = half; y = u; z = v; break;
+                case 1: x = -half; y = u; z = v; break;
+                case 2: x = u; y = half; z = v; break;
+                case 3: x = u; y = -half; z = v; break;
+                case 4: x = u; y = v; z = half; break;
+                case 5: x = u; y = v; z = -half; break;
+                default: x = 0; y = 0; z = 0;
+            }
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+
+            originals[i * 3] = x;
+            originals[i * 3 + 1] = y;
+            originals[i * 3 + 2] = z;
+
+            lives[i] = Math.random();
+            lifeSpeeds[i] = 0.2 + Math.random() * 0.6;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('life', new THREE.BufferAttribute(lives, 1));
+
+        // Custom Shader Material
+        const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uColor: { value: config.color },
+                uSize: { value: config.pointSize * 50 * window.devicePixelRatio },
+                fogColor: { value: config.bgColor },
+                fogNear: { value: config.fogNear },
+                fogFar: { value: config.fogFar }
+            },
+            vertexShader: `
+                attribute float life;
+                varying float vAlpha;
+                uniform float uSize;
+                
+                varying float vFogDepth;
+
+                void main() {
+                    vAlpha = sin(life * 3.14159);
+                    
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = uSize * vAlpha * (10.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                    
+                    vFogDepth = -mvPosition.z;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying float vAlpha;
+                
+                uniform vec3 fogColor;
+                uniform float fogNear;
+                uniform float fogFar;
+                varying float vFogDepth;
+
+                void main() {
+                    if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
+                    
+                    float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+                    float visibility = 1.0 - fogFactor;
+                    
+                    gl_FragColor = vec4(uColor, vAlpha * visibility);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.NormalBlending
+        });
+
+        const pointCloud = new THREE.Points(particlesGeometry, shaderMaterial);
+        scene.add(pointCloud);
+
+        // --- INTERACTION ---
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2(999, 999);
+        const prevPointer = new THREE.Vector2(999, 999);
+        let motionIntensity = 0;
+
+        window.addEventListener('pointermove', (event) => {
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Motion Detection
+            const distMoved = pointer.distanceTo(prevPointer);
+            if (distMoved > 0.001) {
+                motionIntensity = 1.0;
+            } else {
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
+            }
+            prevPointer.copy(pointer);
+
+            const effectiveStrength = config.gravityStrength * motionIntensity;
+
+            pointCloud.rotation.x += delta * config.speed * 0.1;
+            pointCloud.rotation.y += delta * config.speed * 0.2;
+
+            const posAttr = particlesGeometry.attributes.position;
+            const lifeAttr = particlesGeometry.attributes.life;
+
+            raycaster.setFromCamera(pointer, camera);
+            const rayDirWorld = raycaster.ray.direction.clone();
+
+            const inverseMatrix = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
+            const localRay = raycaster.ray.clone().applyMatrix4(inverseMatrix);
+            const localRayDir = rayDirWorld.transformDirection(inverseMatrix).normalize();
+
+            const positionArray = posAttr.array;
+            const lifeArray = lifeAttr.array;
+
+            const vec = new THREE.Vector3();
+            const closest = new THREE.Vector3();
+            const orbit = new THREE.Vector3();
+            const radial = new THREE.Vector3();
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+
+                // Lifecycle
+                lifeArray[i] += delta * lifeSpeeds[i];
+                if (lifeArray[i] > 1.0) {
+                    lifeArray[i] = 0.0;
+                    positionArray[i3] = originals[i3];
+                    positionArray[i3 + 1] = originals[i3 + 1];
+                    positionArray[i3 + 2] = originals[i3 + 2];
+                }
+
+                // Physics
+                vec.set(positionArray[i3], positionArray[i3 + 1], positionArray[i3 + 2]);
+                const ox = originals[i3];
+                const oy = originals[i3 + 1];
+                const oz = originals[i3 + 2];
+
+                const distSq = localRay.distanceSqToPoint(vec);
+                const dist = Math.sqrt(distSq);
+
+                if (dist < config.gravityRadius && effectiveStrength > 0.01) {
+                    localRay.closestPointToPoint(vec, closest);
+
+                    radial.copy(closest).sub(vec).normalize();
+                    orbit.crossVectors(localRayDir, radial).normalize();
+
+                    let strength = (1.0 - dist / config.gravityRadius);
+                    strength = strength * strength;
+
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 8.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 4.0));
+                }
+
+                // Return
+                vec.x += (ox - vec.x) * delta * 0.8;
+                vec.y += (oy - vec.y) * delta * 0.8;
+                vec.z += (oz - vec.z) * delta * 0.8;
+
+                positionArray[i3] = vec.x;
+                positionArray[i3 + 1] = vec.y;
+                positionArray[i3 + 2] = vec.z;
+            }
+
+            posAttr.needsUpdate = true;
+            lifeAttr.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            shaderMaterial.uniforms.uSize.value = config.pointSize * 50 * window.devicePixelRatio;
+        });
+    </script>
+</body>
+
+</html>
