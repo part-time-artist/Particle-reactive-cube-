@@ -8,7 +8,9 @@
     <!-- Futuristic Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300&display=swap"
+        rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -73,7 +75,10 @@
         body::after {
             content: "";
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
@@ -101,7 +106,7 @@
             <span class="status-label">GEOMETRY:</span>
             <span>DATA_CORE_BOX</span>
         </div>
-        
+
         <div class="instruction">
             [MOBILE]<br>
             • 1 FINGER: DISTORT CORE<br>
@@ -150,7 +155,7 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enableZoom = true;
-        
+
         // Fix for two-finger rotation
         controls.touches = {
             ONE: null,
@@ -365,6 +370,7 @@
         });
     </script>
 </body>
+
 </html>
 
 </body>
