@@ -4,14 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Point Cloud</title>
+    <title>Cloud Cube | Interactive Point Cloud</title>
+    <!-- Futuristic Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #050505;
             color: white;
-            font-family: sans-serif;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #canvas-container {
@@ -21,27 +27,59 @@
 
         #info {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            border-radius: 12px;
+            top: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border: 1px solid rgba(0, 153, 255, 0.3);
+            border-radius: 4px;
             pointer-events: none;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 153, 255, 0.1);
         }
 
         h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.2rem;
+            margin: 0 0 15px 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            color: #0099ff;
+            text-shadow: 0 0 10px rgba(0, 153, 255, 0.5);
         }
 
-        p {
-            margin: 5px 0;
-            font-size: 0.9rem;
-            opacity: 0.8;
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .status-label {
+            color: #0099ff;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .instruction {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        /* Scanline Effect */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
         }
     </style>
-    <!-- Import Three.js from CDN -->
     <script type="importmap">
         {
             "imports": {
@@ -54,9 +92,26 @@
 
 <body>
     <div id="info">
-        <h2>Deep Space Cloud</h2>
-        <p>📦 <b>Shape:</b> Hollow Cube</p>
-        <p>🏃 <b>Move Cursor:</b> To attract.</p>
+        <h2>Cloud Cube</h2>
+        <div class="status-item">
+            <span class="status-label">SYS_STATUS:</span>
+            <span>ACTIVE_O1</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">GEOMETRY:</span>
+            <span>DATA_CORE_BOX</span>
+        </div>
+        
+        <div class="instruction">
+            [MOBILE]<br>
+            • 1 FINGER: DISTORT CORE<br>
+            • 2 FINGERS: ROTATE VIEW<br>
+            <br>
+            [DESKTOP]<br>
+            • CURSOR: DISTORT CORE<br>
+            • DRAG: ROTATE VIEW<br>
+            • SCROLL: ZOOM
+        </div>
     </div>
     <div id="canvas-container"></div>
 
@@ -69,12 +124,12 @@
         const config = {
             color: new THREE.Color(0x0099ff),
             bgColor: new THREE.Color(0x050505),
-            pointCount: isMobile ? 8000 : 12000, // Slightly fewer particles for mobile performance
-            pointSize: isMobile ? 0.035 : 0.025, // Slightly larger particles for visibility
+            pointCount: isMobile ? 8000 : 15000,
+            pointSize: isMobile ? 0.012 : 0.010, // MUCH smaller particles
             speed: 0.2,
-            boxSize: isMobile ? 2.5 : 4.0,       // Smaller cube for mobile
-            gravityRadius: isMobile ? 1.5 : 2.5, // Smaller attraction area
-            gravityStrength: isMobile ? 0.25 : 0.2,
+            boxSize: isMobile ? 2.5 : 4.0,
+            gravityRadius: isMobile ? 1.5 : 2.5,
+            gravityStrength: isMobile ? 0.28 : 0.2,
             fogNear: isMobile ? 3.0 : 4.0,
             fogFar: isMobile ? 7.0 : 8.0
         };
@@ -89,19 +144,16 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enableZoom = true;
-        controls.autoRotate = false;
-
-        // --- MOBILE TOUCH OVERRIDE ---
-        // Single finger = Attract Particles
-        // Two fingers = Rotate Cube
+        
+        // Fix for two-finger rotation
         controls.touches = {
-            ONE: null, // Disable rotation with one finger
+            ONE: null,
             TWO: THREE.TOUCH.ROTATE
         };
 
@@ -148,7 +200,7 @@
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 uColor: { value: config.color },
-                uSize: { value: config.pointSize * 50 * window.devicePixelRatio },
+                uSize: { value: config.pointSize * 60 * window.devicePixelRatio },
                 fogColor: { value: config.bgColor },
                 fogNear: { value: config.fogNear },
                 fogFar: { value: config.fogFar }
@@ -182,7 +234,7 @@
             `,
             transparent: true,
             depthWrite: false,
-            blending: THREE.NormalBlending
+            blending: THREE.AdditiveBlending // Glow effect
         });
 
         const pointCloud = new THREE.Points(particlesGeometry, shaderMaterial);
@@ -194,34 +246,25 @@
         const prevPointer = new THREE.Vector2(999, 999);
         let motionIntensity = 0;
 
-        // Desktop handling
         window.addEventListener('pointermove', (event) => {
-            if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
+            if (event.pointerType === 'mouse') {
                 pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
             }
         });
 
-        // Touch handling (Single finger = Particles, Multiple = Orbit)
+        // Touch handling
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                // Allow scrolling if not over canvas if needed, but here we likely want interaction
             } else {
-                // If more than 1 finger, we're likely rotating/zooming
                 pointer.x = 999;
                 pointer.y = 999;
             }
-        }, { passive: false });
-
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-            }
-        }, { passive: false });
+        }, { passive: true });
 
         window.addEventListener('touchend', () => {
             pointer.x = 999;
@@ -236,14 +279,14 @@
             const delta = clock.getDelta();
 
             const distMoved = pointer.distanceTo(prevPointer);
-            if (distMoved > 0.001 && pointer.x < 500) {
+            if (distMoved > 0.0005 && pointer.x < 500) {
                 motionIntensity = 1.0;
             } else {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.5);
             }
             prevPointer.copy(pointer);
 
-            const effectiveStrength = config.gravityStrength * motionIntensity;
+            const effectiveStrength = config.gravityStrength * (isMobile ? 1.2 : 1.0) * motionIntensity;
 
             pointCloud.rotation.x += delta * config.speed * 0.1;
             pointCloud.rotation.y += delta * config.speed * 0.2;
@@ -268,7 +311,6 @@
             for (let i = 0; i < count; i++) {
                 const i3 = i * 3;
 
-                // Lifecycle
                 lifeArray[i] += delta * lifeSpeeds[i];
                 if (lifeArray[i] > 1.0) {
                     lifeArray[i] = 0.0;
@@ -293,12 +335,11 @@
                     let strength = (1.0 - dist / config.gravityRadius);
                     strength = strength * strength;
 
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 10.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 6.0));
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 12.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 8.0));
                 }
 
-                // Smooth Return to origin
-                const returnSpeed = (pointer.x > 500) ? 2.5 : 0.8;
+                const returnSpeed = (pointer.x > 500) ? 3.0 : 0.8;
                 vec.x += (ox - vec.x) * delta * returnSpeed;
                 vec.y += (oy - vec.y) * delta * returnSpeed;
                 vec.z += (oz - vec.z) * delta * returnSpeed;
@@ -318,13 +359,14 @@
         animate();
 
         window.addEventListener('resize', () => {
-            const isNowMobile = window.innerWidth < 768;
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            shaderMaterial.uniforms.uSize.value = config.pointSize * 50 * window.devicePixelRatio;
         });
     </script>
+</body>
+</html>
+
 </body>
 
 </html>
