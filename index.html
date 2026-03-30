@@ -16,7 +16,11 @@
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
-        #canvas-container { width: 100vw; height: 100vh; }
+        #canvas-container { 
+            width: 100vw; 
+            height: 100vh; 
+            touch-action: none; /* Prevents scrolling while touching the canvas */
+        }
         #info {
             position: absolute;
             top: 40px;
@@ -27,6 +31,7 @@
             border-radius: 2px;
             pointer-events: none;
             backdrop-filter: blur(8px);
+            z-index: 10;
         }
         h2 {
             margin: 0;
@@ -88,11 +93,11 @@
     <div id="info">
         <h2>Cloud Cube</h2>
         <div class="desktop-only">
-            <div class="status-item">v.2.2 // core_flux</div>
+            <div class="status-item">v.2.3 // mobile_flux</div>
             <div class="instruction">
                 • cursor: interact<br>
-                • drag: rotate<br>
-                • scroll: zoom
+                • drag/touch: rotate<br>
+                • scroll/pinch: zoom
             </div>
         </div>
     </div>
@@ -109,14 +114,14 @@
         const config = {
             color: new THREE.Color(0xfff8e1), 
             bgColor: new THREE.Color(0x050505),
-            pointCount: isMobile ? 8000 : 15000,
-            pointSize: isMobile ? 0.012 : 0.008, 
+            pointCount: isMobile ? 12000 : 18000,
+            pointSize: isMobile ? 0.010 : 0.007, 
             speed: isMobile ? 0.4 : 0.2,
             boxSize: isMobile ? 1.6 : 3.8,       
-            gravityRadius: isMobile ? 1.2 : 2.5,
-            gravityStrength: isMobile ? 0.14 : 0.12, // EVEN LOWER Magnetism
+            gravityRadius: isMobile ? 1.4 : 2.5,
+            gravityStrength: isMobile ? 0.14 : 0.12, 
             fogNear: isMobile ? 3.0 : 4.0,
-            fogFar: isMobile ? 7.0 : 8.0
+            fogFar: isMobile ? 10.0 : 12.0
         };
 
         const scene = new THREE.Scene();
@@ -134,15 +139,9 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        
-        if (isMobile) {
-            controls.enableRotate = false; 
-            controls.autoRotate = true;   
-            controls.autoRotateSpeed = 4.0;
-        } else {
-            controls.enableRotate = true;
-            controls.autoRotate = false;
-        }
+        controls.enableRotate = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = isMobile ? 2.0 : 0.5;
         controls.enableZoom = true;
 
         const particlesGeometry = new THREE.BufferGeometry();
@@ -221,25 +220,31 @@
         const prevPointer = new THREE.Vector2(999, 999);
         let motionIntensity = 0;
 
-        window.addEventListener('pointermove', (event) => {
-            if (event.pointerType === 'mouse') {
-                pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-                pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            }
+        const updatePointer = (x, y) => {
+            pointer.x = (x / window.innerWidth) * 2 - 1;
+            pointer.y = -(y / window.innerHeight) * 2 + 1;
+        };
+
+        window.addEventListener('pointermove', (e) => {
+            updatePointer(e.clientX, e.clientY);
         });
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-            } else {
-                pointer.x = 999;
-                pointer.y = 999;
+                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
             }
-        }, { passive: true });
+        }, { passive: false });
 
-        window.addEventListener('touchend', () => { pointer.x = 999; pointer.y = 999; });
+        window.addEventListener('touchend', () => { 
+            pointer.x = 999; 
+            pointer.y = 999; 
+        });
 
         const clock = new THREE.Clock();
         function animate() {
@@ -256,8 +261,8 @@
 
             const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
             
-            pointCloud.rotation.x += delta * (isMobile ? 0.2 : 0.05);
-            pointCloud.rotation.y += delta * (isMobile ? 0.3 : 0.1);
+            pointCloud.rotation.x += delta * 0.05;
+            pointCloud.rotation.y += delta * 0.1;
 
             const positionArray = particlesGeometry.attributes.position.array;
             const lifeArray = particlesGeometry.attributes.life.array;
@@ -309,5 +314,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
+</body>
+</html>
+
 </body>
 </html>
