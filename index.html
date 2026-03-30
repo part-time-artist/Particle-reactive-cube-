@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Cube</title>
+    <title>Flux Point</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -25,37 +25,23 @@
             position: absolute;
             top: 40px;
             left: 40px;
-            background: rgba(0, 0, 0, 0.12);
-            padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            border-radius: 2px;
             pointer-events: none;
-            backdrop-filter: blur(8px);
             z-index: 10;
         }
         h2 {
             margin: 0;
-            font-size: 0.85rem;
-            font-weight: 500;
-            letter-spacing: 3px;
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: 5px;
             text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
         }
         .status-item {
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             color: rgba(255, 255, 255, 0.2); 
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-top: 8px;
-        }
-        .instruction {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.6rem;
-            color: rgba(255, 255, 255, 0.3);
-            line-height: 2;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            margin-top: 10px;
         }
         
         #controls-ui {
@@ -64,21 +50,22 @@
             right: 40px;
             z-index: 100;
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
         }
 
         .btn {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             color: rgba(255, 255, 255, 0.4);
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 0.55rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             cursor: pointer;
             backdrop-filter: blur(10px);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1);
             pointer-events: auto;
         }
 
@@ -88,32 +75,55 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
 
+        #sound-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.02);
+            animation: pulse-glow 3s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0px rgba(255, 255, 255, 0); border-color: rgba(255, 255, 255, 0.15); }
+            50% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.4); }
+            100% { box-shadow: 0 0 0px rgba(255, 255, 255, 0); border-color: rgba(255, 255, 255, 0.15); }
+        }
+
         .btn.active {
             border-color: rgba(178, 211, 194, 0.4);
             color: #b2d3c2;
+            animation: none;
+        }
+
+        #record-btn {
+            display: none; /* Only show when sound is active */
+            border-color: rgba(255, 100, 100, 0.1);
+        }
+        #record-btn.active {
+            color: #ff6e6e;
+            border-color: rgba(255, 110, 110, 0.4);
+            background: rgba(255, 110, 110, 0.05);
         }
 
         #watermark {
             position: absolute;
             bottom: 40px;
-            left: 40px;
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.1);
+            letter-spacing: 4px;
             text-transform: uppercase;
             font-weight: 300;
             pointer-events: none;
         }
 
-        /* Responsive Logic */
-        .desktop-only { display: none; }
+        /* Mobile specific adjustments */
         @media (max-width: 767px) {
-            #info { top: 25px; left: 25px; padding: 16px; border: none; background: transparent; backdrop-filter: none; }
-            #watermark { display: none; }
+            #info { top: 25px; left: 25px; }
             #controls-ui { bottom: 25px; right: 25px; }
-        }
-        @media (min-width: 768px) {
-            .desktop-only { display: block; }
+            #watermark { bottom: 15px; font-size: 0.45rem; width: 100%; text-align: center; }
         }
     </style>
     <script type="importmap">
@@ -128,21 +138,15 @@
 <body>
     <div id="info">
         <h2>Flux Point</h2>
-        <div class="desktop-only">
-            <div class="status-item">v.2.6 // particle_instrument</div>
-            <div class="instruction">
-                • cursor: interact<br>
-                • touch: play<br>
-                • scroll: zoom
-            </div>
-        </div>
+        <div class="status-item">made by parttimeartist</div>
     </div>
 
     <div id="controls-ui">
-        <button id="sound-toggle" class="btn">Link Atmosphere</button>
+        <button id="sound-toggle" class="btn">Connect Atmosphere</button>
+        <button id="record-btn" class="btn">Record Session</button>
     </div>
 
-    <div id="watermark">subtle_experiences</div>
+    <div id="watermark">made by parttimeartist</div>
 
     <div id="canvas-container"></div>
 
@@ -154,7 +158,7 @@
         const config = {
             color: new THREE.Color(0xfff8e1), 
             bgColor: new THREE.Color(0x050505),
-            pointCount: isMobile ? 12000 : 18000,
+            pointCount: isMobile ? 12000 : 20000,
             pointSize: isMobile ? 0.010 : 0.007, 
             speed: isMobile ? 0.4 : 0.2,
             boxSize: isMobile ? 1.6 : 3.8,       
@@ -166,9 +170,10 @@
 
         // Advanced Audio System (Interactive Harmonic Instrument)
         let audioCtx, masterGain, soundEnabled = false;
-        let droneOsc, droneGain, filterNode;
-        const notes = [130.81, 164.81, 196.00, 220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25]; // Warm Harmonic Scale
+        let droneOsc, droneGain, filterNode, recorder, audioChunks = [];
+        const notes = [130.81, 164.81, 196.00, 220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25]; 
         const soundToggle = document.getElementById('sound-toggle');
+        const recordBtn = document.getElementById('record-btn');
 
         const initAudio = () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -178,22 +183,38 @@
 
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = 'lowpass';
-            filterNode.frequency.value = 500; // Even Warmer Low-Pass
+            filterNode.frequency.value = 450; 
             filterNode.connect(masterGain);
 
-            // Ambient Drone Initialization (Subtle Hum)
             droneOsc = audioCtx.createOscillator();
             droneGain = audioCtx.createGain();
             droneOsc.type = 'sine';
             droneOsc.frequency.value = 65.41; 
-            droneGain.gain.value = 0.012; // Whisper quiet
+            droneGain.gain.value = 0.012; 
             droneOsc.connect(droneGain);
             droneGain.connect(filterNode);
             droneOsc.start();
 
+            // Prepare Recording Stream
+            const dest = audioCtx.createMediaStreamDestination();
+            masterGain.connect(dest);
+            recorder = new MediaRecorder(dest.stream);
+            
+            recorder.ondataavailable = (e) => audioChunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'flux-point-session.webm';
+                a.click();
+                audioChunks = [];
+            };
+
             soundEnabled = true;
             soundToggle.textContent = 'Active';
             soundToggle.classList.add('active');
+            recordBtn.style.display = 'block';
         };
 
         const playNote = (intensity) => {
@@ -209,21 +230,32 @@
             osc.type = 'triangle'; 
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
-            // Soft Harmonic Envelope (Warm Plucks)
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.3 * intensity, audioCtx.currentTime + 0.15); // Slower attack
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4.0); // Ultra-long trails
+            gain.gain.linearRampToValueAtTime(0.32 * intensity, audioCtx.currentTime + 0.15); 
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4.5); 
             
             osc.connect(gain);
             gain.connect(filterNode);
             
             osc.start();
-            osc.stop(audioCtx.currentTime + 4.5);
+            osc.stop(audioCtx.currentTime + 5.0);
         };
 
         soundToggle.addEventListener('click', async () => {
             if (!audioCtx) initAudio();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
+        });
+
+        recordBtn.addEventListener('click', () => {
+            if (recorder.state === 'inactive') {
+                recorder.start();
+                recordBtn.textContent = 'Stop & Save';
+                recordBtn.classList.add('active');
+            } else {
+                recorder.stop();
+                recordBtn.textContent = 'Record Session';
+                recordBtn.classList.remove('active');
+            }
         });
 
         const scene = new THREE.Scene();
@@ -243,8 +275,7 @@
         controls.dampingFactor = 0.05;
         controls.enableRotate = true;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = isMobile ? 1.5 : 0.4;
-        controls.enableZoom = true;
+        controls.autoRotateSpeed = isMobile ? 1.4 : 0.35;
 
         const particlesGeometry = new THREE.BufferGeometry();
         const count = config.pointCount;
@@ -342,7 +373,6 @@
         function animate() {
             requestAnimationFrame(animate);
             const delta = Math.min(clock.getDelta(), 0.1);
-            const time = clock.getElapsedTime();
             const distMoved = pointer.distanceTo(prevPointer);
             
             if (distMoved > 0.0005 && pointer.x < 500) {
@@ -350,14 +380,13 @@
                 soundCooldown -= delta;
                 if (soundCooldown <= 0 && motionIntensity > 0.12) {
                     playNote(motionIntensity);
-                    soundCooldown = 0.3 + (1.0 - motionIntensity) * 0.5; // Adaptive cooldown
+                    soundCooldown = 0.3 + (1.0 - motionIntensity) * 0.5;
                 }
             } else {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 1.5);
             }
             prevPointer.copy(pointer);
 
-            // Update Drone (Whisper Only)
             if (soundEnabled) {
                 droneGain.gain.setTargetAtTime(0.012 + motionIntensity * 0.03, audioCtx.currentTime, 0.5);
                 filterNode.frequency.setTargetAtTime(300 + motionIntensity * 600, audioCtx.currentTime, 0.5);
