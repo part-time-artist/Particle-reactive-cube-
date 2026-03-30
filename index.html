@@ -109,7 +109,7 @@
         .desktop-only { display: none; }
         @media (max-width: 767px) {
             #info { top: 25px; left: 25px; padding: 16px; border: none; background: transparent; backdrop-filter: none; }
-            #watermark { bottom: 25px; left: 25px; font-size: 0.5rem; letter-spacing: 1.5px; }
+            #watermark { display: none; }
             #controls-ui { bottom: 25px; right: 25px; }
         }
         @media (min-width: 768px) {
@@ -129,7 +129,7 @@
     <div id="info">
         <h2>Flux Point</h2>
         <div class="desktop-only">
-            <div class="status-item">v.2.4 // interactive_sound</div>
+            <div class="status-item">v.2.5 // ambient_reflective</div>
             <div class="instruction">
                 • cursor: interact<br>
                 • touch: play<br>
@@ -139,7 +139,7 @@
     </div>
 
     <div id="controls-ui">
-        <button id="sound-toggle" class="btn">Link Sound</button>
+        <button id="sound-toggle" class="btn">Link Atmosphere</button>
     </div>
 
     <div id="watermark">subtle_experiences</div>
@@ -164,16 +164,33 @@
             fogFar: isMobile ? 10.0 : 12.0
         };
 
-        // Audio System
+        // Advanced Audio System (Ambient Reflective)
         let audioCtx, masterGain, soundEnabled = false;
-        const notes = [261.63, 298.66, 329.63, 392.00, 440.00, 523.25, 597.33, 659.25, 783.99, 880.00]; // Pentatonic
+        let droneOsc, droneGain, filterNode;
+        const notes = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00]; // Emphasize Lower Mids
         const soundToggle = document.getElementById('sound-toggle');
 
         const initAudio = () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.5;
+            masterGain.gain.value = 1.0;
             masterGain.connect(audioCtx.destination);
+
+            filterNode = audioCtx.createBiquadFilter();
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = 800; // Warm, muffled feel
+            filterNode.connect(masterGain);
+
+            // Ambient Drone Initialization
+            droneOsc = audioCtx.createOscillator();
+            droneGain = audioCtx.createGain();
+            droneOsc.type = 'sine';
+            droneOsc.frequency.value = 65.41; // Deep C1 drone
+            droneGain.gain.value = 0.05;
+            droneOsc.connect(droneGain);
+            droneGain.connect(filterNode);
+            droneOsc.start();
+
             soundEnabled = true;
             soundToggle.textContent = 'Active';
             soundToggle.classList.add('active');
@@ -189,18 +206,19 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
-            osc.type = 'triangle';
+            osc.type = 'triangle'; // Warm texture
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
+            // Soft envelope for "All For Nothing" vibe
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.4 * intensity, audioCtx.currentTime + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+            gain.gain.linearRampToValueAtTime(0.2 * intensity, audioCtx.currentTime + 0.1); // Slow attack
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0); // Long ethereal trail
             
             osc.connect(gain);
-            gain.connect(masterGain);
+            gain.connect(filterNode);
             
             osc.start();
-            osc.stop(audioCtx.currentTime + 1.5);
+            osc.stop(audioCtx.currentTime + 4.0);
         };
 
         soundToggle.addEventListener('click', async () => {
@@ -225,7 +243,7 @@
         controls.dampingFactor = 0.05;
         controls.enableRotate = true;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = isMobile ? 2.0 : 0.5;
+        controls.autoRotateSpeed = isMobile ? 1.5 : 0.4;
         controls.enableZoom = true;
 
         const particlesGeometry = new THREE.BufferGeometry();
@@ -309,60 +327,52 @@
             pointer.y = -(y / window.innerHeight) * 2 + 1;
         };
 
-        window.addEventListener('pointermove', (e) => {
-            updatePointer(e.clientX, e.clientY);
-        });
-
+        window.addEventListener('pointermove', (e) => updatePointer(e.clientX, e.clientY));
         window.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-            }
+            if (e.touches.length === 1) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
-
         window.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) {
-                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-            }
+            if (e.touches.length === 1) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
-
-        window.addEventListener('touchend', () => { 
-            pointer.x = 999; 
-            pointer.y = 999; 
-        });
+        window.addEventListener('touchend', () => { pointer.x = 999; pointer.y = 999; });
 
         const clock = new THREE.Clock();
         let soundCooldown = 0;
 
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
+            const delta = Math.min(clock.getDelta(), 0.1);
             const distMoved = pointer.distanceTo(prevPointer);
             
             if (distMoved > 0.0005 && pointer.x < 500) {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 5);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 3);
                 soundCooldown -= delta;
-                if (soundCooldown <= 0 && motionIntensity > 0.15) {
+                if (soundCooldown <= 0 && motionIntensity > 0.2) {
                     playNote(motionIntensity);
-                    soundCooldown = 0.12; 
+                    soundCooldown = 0.4; // Slower, more atmospheric pace
                 }
             } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
+                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 1.5);
             }
             prevPointer.copy(pointer);
 
+            // Update Drone Intensity
+            if (soundEnabled) {
+                droneGain.gain.setTargetAtTime(0.05 + motionIntensity * 0.1, audioCtx.currentTime, 0.5);
+                filterNode.frequency.setTargetAtTime(400 + motionIntensity * 800, audioCtx.currentTime, 0.5);
+            }
+
             const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
-            pointCloud.rotation.x += delta * 0.05;
-            pointCloud.rotation.y += delta * 0.1;
+            pointCloud.rotation.x += delta * 0.03;
+            pointCloud.rotation.y += delta * 0.05;
 
             const positionArray = particlesGeometry.attributes.position.array;
             const lifeArray = particlesGeometry.attributes.life.array;
-            
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(pointer, camera);
-            const inverseMatrix = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
-            const localRay = raycaster.ray.clone().applyMatrix4(inverseMatrix);
-            const localRayDir = raycaster.ray.direction.clone().transformDirection(inverseMatrix).normalize();
+            const inv = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
+            const localRay = raycaster.ray.clone().applyMatrix4(inv);
+            const localRayDir = raycaster.ray.direction.clone().transformDirection(inv).normalize();
 
             const vec = new THREE.Vector3();
             const closest = new THREE.Vector3();
@@ -384,10 +394,10 @@
                     radial.copy(closest).sub(vec).normalize();
                     orbit.crossVectors(localRayDir, radial).normalize();
                     let strength = Math.pow(1.0 - dist / config.gravityRadius, 2);
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 12.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 7.0));
+                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 11.0));
+                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 6.0));
                 }
-                const returnSpeed = (pointer.x > 500) ? 3.0 : 1.2;
+                const returnSpeed = (pointer.x > 500) ? 3.0 : 1.1;
                 vec.x += (ox - vec.x) * delta * returnSpeed;
                 vec.y += (oy - vec.y) * delta * returnSpeed;
                 vec.z += (oz - vec.z) * delta * returnSpeed;
