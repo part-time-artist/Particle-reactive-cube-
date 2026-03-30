@@ -8,145 +8,90 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #050505;
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-        #canvas-container { 
-            width: 100vw; 
-            height: 100vh; 
-            touch-action: none; 
-        }
+        body { margin: 0; overflow: hidden; background: #050505; color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        #canvas-container { width: 100vw; height: 100vh; touch-action: none; position: absolute; top:0; left:0; z-index: 1; }
+        
         #header {
             position: absolute;
             top: 40px;
             left: 40px;
-            pointer-events: none;
             z-index: 100;
-        }
-        h1 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 300;
-            letter-spacing: 6px;
-            text-transform: lowercase;
-            color: rgba(255, 255, 255, 0.9);
-        }
-        .subtitle {
-            font-size: 0.55rem;
-            color: rgba(255, 255, 255, 0.25); 
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-top: 12px;
-            font-weight: 400;
-        }
-        
-        /* Central UX Prompt */
-        #ux-prompt {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 50;
             pointer-events: none;
-            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 80%;
+        }
+        h1 { margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: 6px; text-transform: lowercase; opacity: 0.9; }
+        .subtitle { font-size: 0.55rem; color: rgba(255,255,255,0.3); letter-spacing: 3px; text-transform: uppercase; margin-top: 10px; }
+
+        /* Solid Visibility UX Prompt */
+        #ux-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .prompt-box {
+            text-align: center;
+            padding: 40px;
+            max-width: 85%;
         }
         .prompt-text {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.7rem;
+            color: #fff;
             letter-spacing: 4px;
             text-transform: uppercase;
-            margin-bottom: 24px;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            line-height: 2.2;
+            margin-bottom: 40px;
+            opacity: 0.8;
         }
 
-        #controls-ui {
+        #controls {
             position: absolute;
             bottom: 60px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 100;
+            z-index: 300;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+            justify-content: center;
             width: 100%;
         }
 
         .btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.8);
-            padding: 16px 40px;
+            background: #fff;
+            border: none;
+            color: #000;
+            padding: 18px 45px;
             font-size: 0.65rem;
             text-transform: uppercase;
             letter-spacing: 3px;
             cursor: pointer;
-            backdrop-filter: blur(15px);
-            transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1);
-            pointer-events: auto;
-            border-radius: 2px;
+            transition: all 0.5s ease;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1);
+            font-weight: 500;
         }
+        .btn:hover { letter-spacing: 5px; transform: scale(1.05); }
 
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 5px;
-        }
-
-        #sound-toggle {
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.03);
-            animation: pulse-border 2.5s infinite;
-        }
-
-        @keyframes pulse-border {
-            0% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0px rgba(255, 255, 255, 0); }
-            50% { border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 30px rgba(255, 255, 255, 0.05); }
-            100% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0px rgba(255, 255, 255, 0); }
-        }
-
-        #sound-toggle.active {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
-        }
-
-        #record-container {
-            position: absolute;
-            bottom: 40px;
-            right: 40px;
-            pointer-events: none;
-        }
+        #record-container { position: absolute; bottom: 40px; right: 40px; z-index: 100; pointer-events: none; }
         #record-btn {
             display: none;
-            border-color: rgba(255, 100, 100, 0.1);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+            padding: 12px 24px;
+            font-size: 0.55rem;
+            pointer-events: auto;
         }
-        #record-btn.active {
-            color: #ff6e6e;
-            border-color: rgba(255, 110, 110, 0.4);
-            background: rgba(255, 110, 110, 0.05);
-        }
+        #record-btn.active { color: #ff6e6e; border-color: rgba(255,110,110,0.3); }
 
-        /* Mobile Adjustments */
         @media (max-width: 767px) {
             #header { top: 30px; left: 30px; }
-            h1 { font-size: 0.9rem; letter-spacing: 4px; }
-            .subtitle { font-size: 0.45rem; letter-spacing: 2px; }
-            .prompt-text { 
-                font-size: 0.55rem; 
-                width: 90%; 
-                margin: 0 auto 24px; 
-                line-height: 2; 
-                color: rgba(255, 255, 255, 0.85); /* High Visibility */
-                font-weight: 400;
-            }
-            .btn { padding: 14px 30px; font-size: 0.55rem; }
+            h1 { font-size: 0.9rem; }
+            .prompt-text { font-size: 0.6rem; letter-spacing: 3px; margin-bottom: 30px; }
+            .btn { padding: 15px 35px; font-size: 0.6rem; }
             #record-container { bottom: 25px; right: 25px; }
         }
     </style>
@@ -165,16 +110,15 @@
         <div class="subtitle">made by parttimeartist</div>
     </div>
 
-    <div id="ux-prompt">
-        <div class="prompt-text">An interactive musical instrument.<br>Move through the cloud to play the harmony.</div>
-    </div>
-
-    <div id="controls-ui">
-        <button id="sound-toggle" class="btn">Connect Atmosphere</button>
+    <div id="ux-overlay">
+        <div class="prompt-box">
+            <div class="prompt-text">An interactive musical instrument.<br>Move through the stardust to play the harmony.</div>
+            <button id="sound-init" class="btn">Connect Atmosphere</button>
+        </div>
     </div>
 
     <div id="record-container">
-        <button id="record-btn" class="btn">Record session</button>
+        <button id="record-btn">Record session</button>
     </div>
 
     <div id="canvas-container"></div>
@@ -185,43 +129,34 @@
 
         const isMobile = window.innerWidth < 768;
         const config = {
-            color: new THREE.Color(0xfff8e1), 
-            bgColor: new THREE.Color(0x050505),
-            pointCount: isMobile ? 7000 : 20000,
-            pointSize: isMobile ? 0.007 : 0.007, 
-            speed: isMobile ? 0.4 : 0.2,
-            boxSize: isMobile ? 1.6 : 3.8,       
-            gravityRadius: isMobile ? 1.4 : 2.5,
-            gravityStrength: isMobile ? 0.14 : 0.12, 
-            fogNear: isMobile ? 3.0 : 4.0,
-            fogFar: isMobile ? 10.0 : 12.0
+            color: new THREE.Color(0xfff8e1),
+            pointCount: isMobile ? 5000 : 20000,
+            pointSize: isMobile ? 0.005 : 0.007,
+            gravityRadius: isMobile ? 1.5 : 2.5,
+            gravityStrength: 0.12,
+            fogFar: 14.0
         };
 
-        // Advanced Audio System
-        let audioCtx, masterGain, soundEnabled = false;
-        let droneOsc, droneGain, filterNode, recorder, audioChunks = [];
-        const notes = [130.81, 164.81, 196.00, 220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25]; 
-        
-        const soundToggle = document.getElementById('sound-toggle');
+        let audioCtx, masterGain, droneGain, filterNode, recorder, audioChunks = [];
+        const notes = [130.81, 164.81, 196.00, 220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25];
         const recordBtn = document.getElementById('record-btn');
-        const uxPrompt = document.getElementById('ux-prompt');
+        const uxOverlay = document.getElementById('ux-overlay');
+        const initBtn = document.getElementById('sound-init');
 
-        const initAudio = () => {
+        const setupAudio = () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.8;
             masterGain.connect(audioCtx.destination);
-
+            
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = 'lowpass';
-            filterNode.frequency.value = 450; 
+            filterNode.frequency.value = 400;
             filterNode.connect(masterGain);
 
-            droneOsc = audioCtx.createOscillator();
+            const droneOsc = audioCtx.createOscillator();
             droneGain = audioCtx.createGain();
-            droneOsc.type = 'sine';
-            droneOsc.frequency.value = 65.41; 
-            droneGain.gain.value = 0.012; 
+            droneOsc.frequency.value = 65.41;
+            droneGain.gain.value = 0.01;
             droneOsc.connect(droneGain);
             droneGain.connect(filterNode);
             droneOsc.start();
@@ -229,228 +164,123 @@
             const dest = audioCtx.createMediaStreamDestination();
             masterGain.connect(dest);
             recorder = new MediaRecorder(dest.stream);
-            
-            recorder.ondataavailable = (e) => audioChunks.push(e.data);
+            recorder.ondataavailable = e => audioChunks.push(e.data);
             recorder.onstop = () => {
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'no-niche-session.webm';
-                document.body.appendChild(a);
-                a.click();
+                a.href = url; a.download = 'noniche-session.webm'; a.click();
                 audioChunks = [];
             };
 
-            soundEnabled = true;
-            soundToggle.classList.add('active');
-            uxPrompt.style.opacity = '0';
+            uxOverlay.style.opacity = '0';
+            setTimeout(() => { uxOverlay.style.display = 'none'; }, 1200);
             recordBtn.style.display = 'block';
         };
 
-        const playNote = (intensity) => {
-            if (!soundEnabled || !audioCtx) return;
+        const triggerNote = (intensity, y) => {
+            if (!audioCtx) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const noteIndex = Math.floor(THREE.MathUtils.mapLinear(pointer.y, -1, 1, 0, notes.length - 1));
+            const noteIndex = Math.floor(THREE.MathUtils.mapLinear(y, -1, 1, 0, notes.length - 1));
             const freq = notes[THREE.MathUtils.clamp(noteIndex, 0, notes.length - 1)];
             const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle'; 
+            const g = audioCtx.createGain();
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.32 * intensity, audioCtx.currentTime + 0.15); 
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4.5); 
-            osc.connect(gain);
-            gain.connect(filterNode);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 5.0);
+            g.gain.setValueAtTime(0, audioCtx.currentTime);
+            g.gain.linearRampToValueAtTime(0.3 * intensity, audioCtx.currentTime + 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4.0);
+            osc.connect(g); g.connect(filterNode);
+            osc.start(); osc.stop(audioCtx.currentTime + 4.5);
         };
 
-        soundToggle.addEventListener('click', async () => {
-            if (!audioCtx) initAudio();
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-        });
-
-        recordBtn.addEventListener('click', () => {
+        initBtn.onclick = setupAudio;
+        recordBtn.onclick = () => {
             if (recorder.state === 'inactive') {
-                recorder.start();
-                recordBtn.textContent = 'Stop & Save';
-                recordBtn.classList.add('active');
+                recorder.start(); recordBtn.textContent = 'Stop & Save'; recordBtn.classList.add('active');
             } else {
-                recorder.stop();
-                recordBtn.textContent = 'Record session';
-                recordBtn.classList.remove('active');
+                recorder.stop(); recordBtn.textContent = 'Record session'; recordBtn.classList.remove('active');
             }
-        });
+        };
 
         const scene = new THREE.Scene();
-        scene.background = config.bgColor;
-        scene.fog = new THREE.Fog(config.bgColor, config.fogNear, config.fogFar);
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.Fog(0x050505, 3.0, config.fogFar);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.z = isMobile ? 4.5 : 6;
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.getElementById('canvas-container').appendChild(renderer.domElement);
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.enableRotate = true;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = isMobile ? 1.4 : 0.35;
-        const particlesGeometry = new THREE.BufferGeometry();
-        const count = config.pointCount;
-        const positions = new Float32Array(count * 3);
-        const originals = new Float32Array(count * 3);
-        const lives = new Float32Array(count);
-        const lifeSpeeds = new Float32Array(count);
-        for (let i = 0; i < count; i++) {
-            const face = Math.floor(Math.random() * 6);
-            const u = (Math.random() - 0.5) * config.boxSize;
-            const v = (Math.random() - 0.5) * config.boxSize;
-            const half = config.boxSize / 2;
+        controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.3;
+
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(config.pointCount * 3), orig = new Float32Array(config.pointCount * 3);
+        const life = new Float32Array(config.pointCount), lSpd = new Float32Array(config.pointCount);
+        const box = isMobile ? 1.6 : 3.8;
+        for (let i = 0; i < config.pointCount; i++) {
+            const f = Math.floor(Math.random() * 6), u = (Math.random() - 0.5) * box, v = (Math.random() - 0.5) * box, h = box / 2;
             let x, y, z;
-            switch (face) {
-                case 0: x = half; y = u; z = v; break;
-                case 1: x = -half; y = u; z = v; break;
-                case 2: x = u; y = half; z = v; break;
-                case 3: x = u; y = -half; z = v; break;
-                case 4: x = u; y = v; z = half; break;
-                case 5: x = u; y = v; z = -half; break;
-            }
-            positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
-            originals[i * 3] = x; originals[i * 3 + 1] = y; originals[i * 3 + 2] = z;
-            lives[i] = Math.random(); lifeSpeeds[i] = 0.2 + Math.random() * 0.6;
+            if (f===0){x=h;y=u;z=v} else if(f===1){x=-h;y=u;z=v} else if(f===2){x=u;y=h;z=v} else if(f===3){x=u;y=-h;z=v} else if(f===4){x=u;y=v;z=h} else {x=u;y=v;z=-h}
+            pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z; orig[i*3]=x; orig[i*3+1]=y; orig[i*3+2]=z;
+            life[i]=Math.random(); lSpd[i]=0.2 + Math.random()*0.6;
         }
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        particlesGeometry.setAttribute('life', new THREE.BufferAttribute(lives, 1));
-        const shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                uColor: { value: config.color },
-                uSize: { value: config.pointSize * 60 * window.devicePixelRatio },
-                fogColor: { value: config.bgColor },
-                fogNear: { value: config.fogNear },
-                fogFar: { value: config.fogFar }
-            },
-            vertexShader: `
-                attribute float life;
-                varying float vAlpha;
-                uniform float uSize;
-                varying float vFogDepth;
-                void main() {
-                    vAlpha = sin(life * 3.14159);
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = uSize * vAlpha * (10.0 / -mvPosition.z);
-                    gl_Position = projectionMatrix * mvPosition;
-                    vFogDepth = -mvPosition.z;
-                }
-            `,
-            fragmentShader: `
-                uniform vec3 uColor;
-                varying float vAlpha;
-                uniform vec3 fogColor;
-                uniform float fogNear;
-                uniform float fogFar;
-                varying float vFogDepth;
-                void main() {
-                    if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
-                    float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
-                    float visibility = 1.0 - fogFactor;
-                    gl_FragColor = vec4(uColor, vAlpha * visibility);
-                }
-            `,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.NormalBlending
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('life', new THREE.BufferAttribute(life, 1));
+        const mat = new THREE.ShaderMaterial({
+            uniforms: { uColor: { value: config.color }, uSize: { value: config.pointSize * 60 * window.devicePixelRatio } },
+            vertexShader: `attribute float life; varying float vA; uniform float uSize; void main() { vA = sin(life * 3.14159); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * vA * (10.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
+            fragmentShader: `uniform vec3 uColor; varying float vA; void main() { if (length(gl_PointCoord - 0.5) > 0.475) discard; gl_FragColor = vec4(uColor, vA * 0.8); }`,
+            transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
         });
-        const pointCloud = new THREE.Points(particlesGeometry, shaderMaterial);
-        scene.add(pointCloud);
-        const pointer = new THREE.Vector2(999, 999);
-        const prevPointer = new THREE.Vector2(999, 999);
-        let motionIntensity = 0;
-        const updatePointer = (x, y) => {
-            pointer.x = (x / window.innerWidth) * 2 - 1;
-            pointer.y = -(y / window.innerHeight) * 2 + 1;
-        };
-        window.addEventListener('pointermove', (e) => updatePointer(e.clientX, e.clientY));
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-        window.addEventListener('touchend', () => { pointer.x = 999; pointer.y = 999; });
+        const cloud = new THREE.Points(geo, mat); scene.add(cloud);
+
+        const pointer = new THREE.Vector2(9, 9), prev = new THREE.Vector2(9, 9);
+        let mInt = 0, sCool = 0;
+        const upd = (x, y) => { pointer.x = (x / window.innerWidth) * 2 - 1; pointer.y = -(y / window.innerHeight) * 2 + 1; };
+        window.onpointermove = e => upd(e.clientX, e.clientY);
+        window.ontouchmove = e => { if (e.touches.length === 1) upd(e.touches[0].clientX, e.touches[0].clientY); };
+        window.ontouchend = () => { pointer.set(9,9); };
+
         const clock = new THREE.Clock();
-        let soundCooldown = 0;
-        function animate() {
-            requestAnimationFrame(animate);
-            const delta = Math.min(clock.getDelta(), 0.1);
-            const distMoved = pointer.distanceTo(prevPointer);
-            if (distMoved > 0.0005 && pointer.x < 500) {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 3);
-                soundCooldown -= delta;
-                if (soundCooldown <= 0 && motionIntensity > 0.12) {
-                    playNote(motionIntensity);
-                    soundCooldown = 0.3 + (1.0 - motionIntensity) * 0.5;
+        function anim() {
+            requestAnimationFrame(anim);
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const move = pointer.distanceTo(prev);
+            if (move > 0.0005 && pointer.x < 1.1) {
+                mInt = THREE.MathUtils.lerp(mInt, 1.0, dt * 3);
+                sCool -= dt;
+                if (sCool <= 0 && mInt > 0.15) { triggerNote(mInt, pointer.y); sCool = 0.3 + (1 - mInt) * 0.4; }
+            } else { mInt = THREE.MathUtils.lerp(mInt, 0, dt * 1.5); }
+            prev.copy(pointer);
+            if (droneGain) { droneGain.gain.setTargetAtTime(0.01 + mInt * 0.03, audioCtx.currentTime, 0.5); filterNode.frequency.setTargetAtTime(300 + mInt * 600, audioCtx.currentTime, 0.5); }
+            cloud.rotation.x += dt * 0.03; cloud.rotation.y += dt * 0.05;
+            const pA = geo.attributes.position.array; const lA = geo.attributes.life.array;
+            const ray = new THREE.Raycaster(); ray.setFromCamera(pointer, camera);
+            const inv = new THREE.Matrix4().copy(cloud.matrixWorld).invert();
+            const lRay = ray.ray.clone().applyMatrix4(inv);
+            const lDir = ray.ray.direction.clone().transformDirection(inv).normalize();
+            for (let i = 0; i < config.pointCount; i++) {
+                const i3 = i * 3; lA[i] += dt * lSpd[i]; if (lA[i] > 1.0) { lA[i] = 0; pA[i3]=orig[i3]; pA[i3+1]=orig[i3+1]; pA[i3+2]=orig[i3+2]; }
+                const v = new THREE.Vector3(pA[i3], pA[i3+1], pA[i3+2]), curO = new THREE.Vector3(orig[i3], orig[i3+1], orig[i3+2]);
+                const dist = lRay.distanceToPoint(v);
+                if (dist < config.gravityRadius && mInt > 0.01) {
+                    const cl = new THREE.Vector3(); lRay.closestPointToPoint(v, cl);
+                    const rd = new THREE.Vector3().copy(cl).sub(v).normalize();
+                    const orb = new THREE.Vector3().crossVectors(lDir, rd).normalize();
+                    let st = Math.pow(1 - dist / config.gravityRadius, 2);
+                    v.add(rd.multiplyScalar(dt * config.gravityStrength * st * 11.0 * mInt));
+                    v.add(orb.multiplyScalar(dt * config.gravityStrength * st * 6.0 * mInt));
                 }
-            } else {
-                motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 1.5);
+                v.x += (curO.x - v.x) * dt * 1.1; v.y += (curO.y - v.y) * dt * 1.1; v.z += (curO.z - v.z) * dt * 1.1;
+                pA[i3]=v.x; pA[i3+1]=v.y; pA[i3+2]=v.z;
             }
-            prevPointer.copy(pointer);
-            if (soundEnabled) {
-                droneGain.gain.setTargetAtTime(0.012 + motionIntensity * 0.03, audioCtx.currentTime, 0.5);
-                filterNode.frequency.setTargetAtTime(300 + motionIntensity * 600, audioCtx.currentTime, 0.5);
-            }
-            const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
-            pointCloud.rotation.x += delta * 0.03;
-            pointCloud.rotation.y += delta * 0.05;
-            const positionArray = particlesGeometry.attributes.position.array;
-            const lifeArray = particlesGeometry.attributes.life.array;
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(pointer, camera);
-            const inv = new THREE.Matrix4().copy(pointCloud.matrixWorld).invert();
-            const localRay = raycaster.ray.clone().applyMatrix4(inv);
-            const localRayDir = raycaster.ray.direction.clone().transformDirection(inv).normalize();
-            const vec = new THREE.Vector3();
-            const closest = new THREE.Vector3();
-            const orbit = new THREE.Vector3();
-            const radial = new THREE.Vector3();
-            for (let i = 0; i < count; i++) {
-                const i3 = i * 3;
-                lifeArray[i] += delta * lifeSpeeds[i];
-                if (lifeArray[i] > 1.0) {
-                    lifeArray[i] = 0.0;
-                    positionArray[i3] = originals[i3]; positionArray[i3+1] = originals[i3+1]; positionArray[i3+2] = originals[i3+2];
-                }
-                vec.set(positionArray[i3], positionArray[i3+1], positionArray[i3+2]);
-                const ox = originals[i3], oy = originals[i3+1], oz = originals[i3+2];
-                const dist = localRay.distanceToPoint(vec);
-                if (dist < config.gravityRadius && effectiveStrength > 0.01) {
-                    localRay.closestPointToPoint(vec, closest);
-                    radial.copy(closest).sub(vec).normalize();
-                    orbit.crossVectors(localRayDir, radial).normalize();
-                    let strength = Math.pow(1.0 - dist / config.gravityRadius, 2);
-                    vec.add(radial.multiplyScalar(delta * effectiveStrength * strength * 11.0));
-                    vec.add(orbit.multiplyScalar(delta * effectiveStrength * strength * 6.0));
-                }
-                const returnSpeed = (pointer.x > 500) ? 3.0 : 1.1;
-                vec.x += (ox - vec.x) * delta * returnSpeed;
-                vec.y += (oy - vec.y) * delta * returnSpeed;
-                vec.z += (oz - vec.z) * delta * returnSpeed;
-                positionArray[i3] = vec.x; positionArray[i3 + 1] = vec.y; positionArray[i3 + 2] = vec.z;
-            }
-            particlesGeometry.attributes.position.needsUpdate = true;
-            particlesGeometry.attributes.life.needsUpdate = true;
-            controls.update();
-            renderer.render(scene, camera);
+            geo.attributes.position.needsUpdate = true; geo.attributes.life.needsUpdate = true;
+            controls.update(); renderer.render(scene, camera);
         }
-        animate();
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        anim();
+        window.onresize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
     </script>
 </body>
 </html>
