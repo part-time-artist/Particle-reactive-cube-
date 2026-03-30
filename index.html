@@ -19,7 +19,7 @@
         #canvas-container { 
             width: 100vw; 
             height: 100vh; 
-            touch-action: none; /* Prevents scrolling while touching the canvas */
+            touch-action: none; 
         }
         #info {
             position: absolute;
@@ -109,7 +109,7 @@
         .desktop-only { display: none; }
         @media (max-width: 767px) {
             #info { top: 25px; left: 25px; padding: 16px; border: none; background: transparent; backdrop-filter: none; }
-            #watermark { display: none; }
+            #watermark { bottom: 25px; left: 25px; font-size: 0.5rem; letter-spacing: 1.5px; }
             #controls-ui { bottom: 25px; right: 25px; }
         }
         @media (min-width: 768px) {
@@ -127,13 +127,13 @@
 </head>
 <body>
     <div id="info">
-        <h2>Cloud Cube</h2>
+        <h2>Flux Point</h2>
         <div class="desktop-only">
-            <div class="status-item">v.2.3 // mobile_flux</div>
+            <div class="status-item">v.2.4 // interactive_sound</div>
             <div class="instruction">
                 • cursor: interact<br>
-                • drag/touch: rotate<br>
-                • scroll/pinch: zoom
+                • touch: play<br>
+                • scroll: zoom
             </div>
         </div>
     </div>
@@ -166,13 +166,13 @@
 
         // Audio System
         let audioCtx, masterGain, soundEnabled = false;
-        const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00]; // Pentatonic C
+        const notes = [261.63, 298.66, 329.63, 392.00, 440.00, 523.25, 597.33, 659.25, 783.99, 880.00]; // Pentatonic
         const soundToggle = document.getElementById('sound-toggle');
 
         const initAudio = () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.3;
+            masterGain.gain.value = 0.5;
             masterGain.connect(audioCtx.destination);
             soundEnabled = true;
             soundToggle.textContent = 'Active';
@@ -180,18 +180,20 @@
         };
 
         const playNote = (intensity) => {
-            if (!soundEnabled) return;
+            if (!soundEnabled || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
             const noteIndex = Math.floor(THREE.MathUtils.mapLinear(pointer.y, -1, 1, 0, notes.length - 1));
             const freq = notes[THREE.MathUtils.clamp(noteIndex, 0, notes.length - 1)];
             
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
-            osc.type = 'sine';
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.3 * intensity, audioCtx.currentTime + 0.02);
+            gain.gain.linearRampToValueAtTime(0.4 * intensity, audioCtx.currentTime + 0.05);
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
             
             osc.connect(gain);
@@ -201,9 +203,9 @@
             osc.stop(audioCtx.currentTime + 1.5);
         };
 
-        soundToggle.addEventListener('click', () => {
+        soundToggle.addEventListener('click', async () => {
             if (!audioCtx) initAudio();
-            else if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
         });
 
         const scene = new THREE.Scene();
@@ -340,9 +342,9 @@
             if (distMoved > 0.0005 && pointer.x < 500) {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 5);
                 soundCooldown -= delta;
-                if (soundCooldown <= 0 && motionIntensity > 0.4) {
+                if (soundCooldown <= 0 && motionIntensity > 0.15) {
                     playNote(motionIntensity);
-                    soundCooldown = 0.15; // Limit sound density
+                    soundCooldown = 0.12; 
                 }
             } else {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 2.0);
@@ -350,7 +352,6 @@
             prevPointer.copy(pointer);
 
             const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
-            
             pointCloud.rotation.x += delta * 0.05;
             pointCloud.rotation.y += delta * 0.1;
 
@@ -404,8 +405,5 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
-</body>
-</html>
-
 </body>
 </html>
