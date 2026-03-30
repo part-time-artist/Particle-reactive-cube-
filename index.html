@@ -129,7 +129,7 @@
     <div id="info">
         <h2>Flux Point</h2>
         <div class="desktop-only">
-            <div class="status-item">v.2.5 // ambient_reflective</div>
+            <div class="status-item">v.2.6 // particle_instrument</div>
             <div class="instruction">
                 • cursor: interact<br>
                 • touch: play<br>
@@ -164,29 +164,29 @@
             fogFar: isMobile ? 10.0 : 12.0
         };
 
-        // Advanced Audio System (Ambient Reflective)
+        // Advanced Audio System (Interactive Harmonic Instrument)
         let audioCtx, masterGain, soundEnabled = false;
         let droneOsc, droneGain, filterNode;
-        const notes = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00]; // Emphasize Lower Mids
+        const notes = [130.81, 164.81, 196.00, 220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25]; // Warm Harmonic Scale
         const soundToggle = document.getElementById('sound-toggle');
 
         const initAudio = () => {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 1.0;
+            masterGain.gain.value = 0.8;
             masterGain.connect(audioCtx.destination);
 
             filterNode = audioCtx.createBiquadFilter();
             filterNode.type = 'lowpass';
-            filterNode.frequency.value = 800; // Warm, muffled feel
+            filterNode.frequency.value = 500; // Even Warmer Low-Pass
             filterNode.connect(masterGain);
 
-            // Ambient Drone Initialization
+            // Ambient Drone Initialization (Subtle Hum)
             droneOsc = audioCtx.createOscillator();
             droneGain = audioCtx.createGain();
             droneOsc.type = 'sine';
-            droneOsc.frequency.value = 65.41; // Deep C1 drone
-            droneGain.gain.value = 0.05;
+            droneOsc.frequency.value = 65.41; 
+            droneGain.gain.value = 0.012; // Whisper quiet
             droneOsc.connect(droneGain);
             droneGain.connect(filterNode);
             droneOsc.start();
@@ -206,19 +206,19 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
-            osc.type = 'triangle'; // Warm texture
+            osc.type = 'triangle'; 
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
-            // Soft envelope for "All For Nothing" vibe
+            // Soft Harmonic Envelope (Warm Plucks)
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.2 * intensity, audioCtx.currentTime + 0.1); // Slow attack
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0); // Long ethereal trail
+            gain.gain.linearRampToValueAtTime(0.3 * intensity, audioCtx.currentTime + 0.15); // Slower attack
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4.0); // Ultra-long trails
             
             osc.connect(gain);
             gain.connect(filterNode);
             
             osc.start();
-            osc.stop(audioCtx.currentTime + 4.0);
+            osc.stop(audioCtx.currentTime + 4.5);
         };
 
         soundToggle.addEventListener('click', async () => {
@@ -342,24 +342,25 @@
         function animate() {
             requestAnimationFrame(animate);
             const delta = Math.min(clock.getDelta(), 0.1);
+            const time = clock.getElapsedTime();
             const distMoved = pointer.distanceTo(prevPointer);
             
             if (distMoved > 0.0005 && pointer.x < 500) {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 1.0, delta * 3);
                 soundCooldown -= delta;
-                if (soundCooldown <= 0 && motionIntensity > 0.2) {
+                if (soundCooldown <= 0 && motionIntensity > 0.12) {
                     playNote(motionIntensity);
-                    soundCooldown = 0.4; // Slower, more atmospheric pace
+                    soundCooldown = 0.3 + (1.0 - motionIntensity) * 0.5; // Adaptive cooldown
                 }
             } else {
                 motionIntensity = THREE.MathUtils.lerp(motionIntensity, 0, delta * 1.5);
             }
             prevPointer.copy(pointer);
 
-            // Update Drone Intensity
+            // Update Drone (Whisper Only)
             if (soundEnabled) {
-                droneGain.gain.setTargetAtTime(0.05 + motionIntensity * 0.1, audioCtx.currentTime, 0.5);
-                filterNode.frequency.setTargetAtTime(400 + motionIntensity * 800, audioCtx.currentTime, 0.5);
+                droneGain.gain.setTargetAtTime(0.012 + motionIntensity * 0.03, audioCtx.currentTime, 0.5);
+                filterNode.frequency.setTargetAtTime(300 + motionIntensity * 600, audioCtx.currentTime, 0.5);
             }
 
             const effectiveStrength = config.gravityStrength * (isMobile ? 1.5 : 1.0) * motionIntensity;
